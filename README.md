@@ -17,7 +17,7 @@ Download **Lume-Setup.exe** from the [latest release](https://github.com/flavw/L
 - Lossless JPEG cropping and rotation through jpegtran. Numbered copies preserve the source; imperfect rotations are rejected.
 - JPEG and WebP export at quality 80 by default, configurable quality, and lossless PNG export.
 - AI generation metadata inspection and copying, including supported Stable Diffusion parameters and ComfyUI JSON stored in PNG, JPEG and WebP metadata.
-- AI metadata reading and copying, plus the standard Windows Print Pictures dialog for the displayed image.
+- AI metadata reading and copying.
 - Image information, clipboard images, rename with separate extension field, file copying/moving and deletion confirmation.
 - CBZ comic reading, basic image adjustments, undo/redo and unsaved-change confirmation.
 - Dark, light, system and customizable neon themes; English and Portuguese interfaces.
