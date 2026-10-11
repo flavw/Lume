@@ -93,7 +93,7 @@ impl Default for Settings {
             webp_quality: 80,
             ratio: 3,
             slide_seconds: 4.0,
-            show_toolbar: false,
+            show_toolbar: true,
             show_status_bar: false,
             auto_restart: false,
             menu_transparency: 0,
@@ -153,6 +153,7 @@ enum Dialog {
 enum Message {
     Book(backend::Result<Arc<comic::Book>>),
     Export(backend::Result<()>),
+    Print(backend::Result<tempfile::TempPath>),
     Saved(PathBuf, backend::Result<()>),
     Information(backend::Result<Vec<(String, String)>>),
     Lossless(backend::Result<PathBuf>),
@@ -162,6 +163,7 @@ enum Message {
 }
 
 struct App {
+    print_snapshots: Vec<tempfile::TempPath>,
     pixel_ratio: f32,
     tiles: tiles::Renderer,
     settings: Settings,
@@ -233,6 +235,7 @@ impl App {
         });
         let (tx, rx) = mpsc::channel();
         let mut app = Self {
+            print_snapshots: Vec::new(),
             pixel_ratio: cc.egui_ctx.pixels_per_point(),
             tiles: tiles::Renderer::default(),
             fit: settings.fit,
@@ -544,6 +547,15 @@ impl App {
                         Err(e) => self.fail(e),
                     }
                 }
+                Message::Print(result) => match result {
+                    Ok(snapshot) => {
+                        if let Err(e) = backend::open_print_dialog(&snapshot) {
+                            self.fail(e);
+                        }
+                        self.print_snapshots.push(snapshot);
+                    }
+                    Err(e) => self.fail(e),
+                },
                 Message::Export(r) => {
                     self.busy = false;
                     match r {
@@ -622,6 +634,18 @@ impl App {
         self.index = model::next_index(self.index, delta, self.files.len());
         self.request_load(self.files[self.index].clone());
         self.last_slide = Instant::now();
+    }
+    fn print_image(&mut self, ctx: &egui::Context) {
+        let Some(pixels) = self.image.clone() else {
+            return;
+        };
+        let tx = self.tx.clone();
+        let ctx = ctx.clone();
+        std::thread::spawn(move || {
+            let result = backend::print_image(&pixels);
+            let _ = tx.send(Message::Print(result));
+            ctx.request_repaint();
+        });
     }
     fn choose_open(&mut self) {
         if let Some(p) = rfd::FileDialog::new()
@@ -1310,6 +1334,7 @@ impl App {
                 }
                 match key {
                     Key::O => self.choose_open(),
+                    Key::P if cfg!(windows) => self.print_image(ctx),
                     Key::A => {
                         let (w, h) = self.dimensions();
                         if self.selection == Some(Crop { x: 0, y: 0, w, h }) {
@@ -1531,6 +1556,18 @@ impl App {
                                 }
                                 if item(ui, "Salvar imagem", "Ctrl+S") {
                                     self.save_original();
+                                }
+                                if cfg!(windows)
+                                    && ui
+                                        .add_enabled(
+                                            self.image.is_some(),
+                                            egui::Button::new(t("Imprimir"))
+                                                .shortcut_text("Ctrl+P"),
+                                        )
+                                        .clicked()
+                                {
+                                    ui.close_menu();
+                                    self.print_image(ctx);
                                 }
                                 if item(ui, "Renomear", "F2") {
                                     if let Some(p) = &self.path {
@@ -2380,7 +2417,7 @@ impl App {
                             ("+ ou = / −","Ampliar / reduzir"),("1–7","Modos de ajuste, conforme menu Exibir"),("Enter / F","Tela cheia / janela"),("T","Mostrar / ocultar título da arte (tela cheia)"),
                             ("Esc","Cancelar seleção, sair da tela cheia ou fechar"),("F2 / F6","Renomear, incluindo extensão"),("F5 / U","Recarregar imagem e pasta"),
                             ("F7 / F8","Mover / copiar arquivo"),("Del / Shift+Del","Lixeira / exclusão permanente, com confirmação"),("F11","Ocultar / mostrar cursor em tela cheia"),
-                            ("I","Informações da imagem"),("P","Preferências"),("S","Exportar JPEG / WebP"),("Ctrl+O","Abrir imagem"),("Ctrl+S","Salvar imagem"),("Ctrl+Shift+S","Exportar WebP"),("Ctrl+A","Selecionar / desselecionar tudo"),
+                            ("I","Informações da imagem"),("P","Preferências"),("S","Exportar JPEG / WebP"),("Ctrl+P","Imprimir"),("Ctrl+O","Abrir imagem"),("Ctrl+S","Salvar imagem"),("Ctrl+Shift+S","Exportar WebP"),("Ctrl+A","Selecionar / desselecionar tudo"),
                             ("Ctrl+Y","Aplicar recorte selecionado"),("Ctrl+Shift+L","Iniciar recorte JPEG sem perdas"),("Ctrl + setas","Redimensionar seleção proporcionalmente"),
                             ("Shift + setas","Mover seleção em passos maiores"),("Alt + setas","Alterar largura / altura da seleção"),
                             ("Ctrl+Z / Ctrl+J","Desfazer / refazer edições"),("Ctrl+C / Ctrl+Insert","Copiar imagem ou seleção"),("Ctrl+V","Colar como nova imagem"),

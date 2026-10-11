@@ -217,6 +217,7 @@ pub fn t(text: &str) -> String {
         ("Proporção largura : altura", "Width : height ratio"),
         ("Inverter", "Swap"),
         ("Cor neon", "Neon color"),
+        ("Imprimir", "Print"),
         ("Recortar", "Select area"),
         ("Recortar sem perdas", "Lossless crop"),
         ("Copiar", "Copy"),

@@ -1,6 +1,6 @@
 # Lume
 
-A minimalist image viewer written in Rust, inspired by IrfanView. Lume focuses on fast folder navigation and simple image cropping for wallpapers, with support for reading and copying AI generation metadata.
+A minimalist image viewer written in Rust, inspired by IrfanView. Lume focuses on fast folder navigation and simple image cropping for wallpapers, with support for JPEG, PNG, WebP, AVIF, GIF, BMP, TIFF, HEIC, ICO and CBZ comics.
 
 ![Lume with its default interface](docs/screenshot.png)
 
@@ -11,12 +11,13 @@ Download **Lume-Setup.exe** from the [latest release](https://github.com/flavw/L
 ## Features
 
 - Fast native decoding of JPEG, PNG and WebP, asynchronous loading and a bounded image cache.
-- Minimal text menus; optional toolbar and status bar.
+- Minimal text menus; toolbar enabled by default and optional status bar.
 - Original-size viewing, seven zoom modes, fullscreen and slideshow.
 - Wallpaper crops: Free, 1:1, 16:9, 9:16, 10:16, 8:16, original and custom aspect ratios; rule-of-thirds grid and resizable handles.
 - Lossless JPEG cropping and rotation through jpegtran. Numbered copies preserve the source; imperfect rotations are rejected.
 - JPEG and WebP export at quality 80 by default, configurable quality, and lossless PNG export.
 - AI generation metadata inspection and copying, including supported Stable Diffusion parameters and ComfyUI JSON stored in PNG, JPEG and WebP metadata.
+- AI metadata reading and copying, plus the standard Windows Print Pictures dialog for the displayed image.
 - Image information, clipboard images, rename with separate extension field, file copying/moving and deletion confirmation.
 - CBZ comic reading, basic image adjustments, undo/redo and unsaved-change confirmation.
 - Dark, light, system and customizable neon themes; English and Portuguese interfaces.
@@ -34,6 +35,7 @@ Download **Lume-Setup.exe** from the [latest release](https://github.com/flavw/L
 | P | Preferences |
 | F2 | Rename |
 | Ctrl+S | Save dialog |
+| Ctrl+P | Windows Print Pictures |
 | S | Export JPEG |
 | Ctrl+Y | Apply the crop |
 | Delete / Shift+Delete | Recycle / permanently delete, with confirmation |

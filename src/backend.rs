@@ -714,3 +714,54 @@ mod tests {
         assert_eq!(std::fs::read(&p).unwrap(), b"external change");
     }
 }
+
+/// Prepare a print snapshot; retain ownership while the system dialog is open.
+pub fn print_image(pixels: &RgbaImage) -> Result<tempfile::TempPath> {
+    let snapshot = tempfile::Builder::new()
+        .prefix("lume-print-")
+        .suffix(".png")
+        .tempfile()
+        .map_err(|e| e.to_string())?;
+    pixels
+        .save_with_format(snapshot.path(), image::ImageFormat::Png)
+        .map_err(|e| e.to_string())?;
+    Ok(snapshot.into_temp_path())
+}
+
+pub fn open_print_dialog(path: &Path) -> Result<()> {
+    #[cfg(windows)]
+    {
+        use std::os::windows::ffi::OsStrExt;
+        use windows_sys::Win32::{
+            System::Com::{CoInitializeEx, COINIT_APARTMENTTHREADED},
+            UI::Shell::ShellExecuteW,
+        };
+        static INIT: std::sync::Once = std::sync::Once::new();
+        INIT.call_once(|| unsafe {
+            CoInitializeEx(std::ptr::null(), COINIT_APARTMENTTHREADED as u32);
+        });
+        let verb: Vec<u16> = "print".encode_utf16().chain(Some(0)).collect();
+        let file: Vec<u16> = path.as_os_str().encode_wide().chain(Some(0)).collect();
+        let result = unsafe {
+            ShellExecuteW(
+                std::ptr::null_mut(),
+                verb.as_ptr(),
+                file.as_ptr(),
+                std::ptr::null(),
+                std::ptr::null(),
+                1,
+            )
+        } as isize;
+        if result <= 32 {
+            return Err(format!(
+                "Windows could not open the image print dialog (error {result})."
+            ));
+        }
+        Ok(())
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = path;
+        Err("Printing is available only on Windows.".into())
+    }
+}
