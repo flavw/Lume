@@ -1,4 +1,4 @@
-﻿param([Parameter(Mandatory=$true)][string]$Payload,[string]$Target=(Join-Path $env:LOCALAPPDATA 'Programs\LumeView'),[switch]$StageOnly)
+param([Parameter(Mandatory=$true)][string]$Payload,[string]$Target=(Join-Path $env:LOCALAPPDATA 'Programs\LumeView'),[switch]$StageOnly)
 $ErrorActionPreference='Stop'
 try {
 $Target=[IO.Path]::GetFullPath($Target)
@@ -61,7 +61,7 @@ $link=$shell.CreateShortcut($start);$link.TargetPath=$exe;$link.WorkingDirectory
 $uninstall='HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\LumeView'
 New-Item -Force -Path $uninstall | Out-Null
 Set-ItemProperty -LiteralPath $uninstall -Name DisplayName -Value 'LumeView'
-Set-ItemProperty -LiteralPath $uninstall -Name DisplayVersion -Value '0.31.0'
+Set-ItemProperty -LiteralPath $uninstall -Name DisplayVersion -Value '0.32.0'
 Set-ItemProperty -LiteralPath $uninstall -Name DisplayIcon -Value $exe
 Set-ItemProperty -LiteralPath $uninstall -Name InstallLocation -Value $Target
 Set-ItemProperty -LiteralPath $uninstall -Name UninstallString -Value ('powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "'+(Join-Path $Target 'installer\uninstall.ps1')+'"')
