@@ -1,12 +1,12 @@
-# Lume
+# LumeView
 
-A minimalist image viewer written in Rust, inspired by IrfanView. Lume focuses on fast folder navigation and simple image cropping for wallpapers, with support for JPEG, PNG, WebP, AVIF, GIF, BMP, TIFF, HEIC, ICO and CBZ comics.
+A minimalist image viewer written in Rust, inspired by IrfanView. LumeView focuses on fast folder navigation and simple image cropping for wallpapers, with support for JPEG, PNG, WebP, AVIF, GIF, BMP, TIFF, HEIC, ICO and CBZ comics.
 
-![Lume with its default interface](docs/screenshot.png)
+![LumeView with its default interface](docs/screenshot.png)
 
 ## Download
 
-Download **Lume-Setup.exe** from the [latest release](https://github.com/flavw/Lume/releases/latest). The current Windows build is 64-bit. The installer is unsigned, so Windows SmartScreen may show an unrecognized-app warning.
+Download **LumeView-Setup.exe** from the [latest release](https://github.com/flavw/LumeView/releases/latest). The current Windows build is 64-bit. The installer is unsigned, so Windows SmartScreen may show an unrecognized-app warning.
 
 ## Features
 
@@ -48,20 +48,20 @@ Without modifiers, the mouse wheel navigates images or scrolls vertically in the
 Install Rust and your platform's native build tools, then run:
 
 ```sh
-cargo build --release --bin lume
+cargo build --release --bin lumeview
 ```
 
 The Windows build also needs a resource compiler (`windres` for the GNU toolchain). The shipped Windows release is tested; Linux support is present in the source but has not yet been validated as a release.
 
-JPEG/PNG/WebP viewing uses native libraries. Additional formats such as AVIF and batch conversion use ImageMagick on demand; lossless JPEG operations use jpegtran. These tools are bundled with the Windows installer. For a source build, install them on PATH, place them under `tools/`, or set `LUME_MAGICK` and `LUME_JPEGTRAN` to their executable paths. They are not required for native-format navigation.
+JPEG/PNG/WebP viewing uses native libraries. Additional formats such as AVIF and batch conversion use ImageMagick on demand; lossless JPEG operations use jpegtran. These tools are bundled with the Windows installer. For a source build, install them on PATH, place them under `tools/`, or set `LUMEVIEW_MAGICK` and `LUMEVIEW_JPEGTRAN` to their executable paths. They are not required for native-format navigation.
 
 ```sh
-cargo test --bin lume
-cargo clippy --bin lume -- -D warnings
+cargo test --bin lumeview
+cargo clippy --bin lumeview -- -D warnings
 ```
 
 ## License and AI assistance
 
-Lume's own source code and assets are dedicated to the public domain under **CC0 1.0 Universal**. See [LICENSE](LICENSE). Third-party libraries and bundled tools retain their respective licenses; see [THIRD_PARTY_LICENSES.txt](THIRD_PARTY_LICENSES.txt) and their accompanying notices.
+LumeView's own source code and assets are dedicated to the public domain under **CC0 1.0 Universal**. See [LICENSE](LICENSE). Third-party libraries and bundled tools retain their respective licenses; see [THIRD_PARTY_LICENSES.txt](THIRD_PARTY_LICENSES.txt) and their accompanying notices.
 
-This project was programmed with AI assistance. AI tools were also used to create the cat icon. Lume is an independent project and is not affiliated with IrfanView.
+This project was programmed with AI assistance. AI tools were also used to create the cat icon. LumeView is an independent project and is not affiliated with IrfanView.

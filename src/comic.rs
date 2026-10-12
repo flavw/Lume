@@ -62,7 +62,7 @@ impl Book {
             return Err("O quadrinho não contém imagens compatíveis.".into());
         }
         let temp = tempfile::Builder::new()
-            .prefix("lume-comic-")
+            .prefix("lumeview-comic-")
             .tempdir()
             .map_err(|e| e.to_string())?;
         let pages = names

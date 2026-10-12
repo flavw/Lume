@@ -1,15 +1,15 @@
 use std::{env, path::PathBuf, process::Command};
 fn main() {
-    println!("cargo:rerun-if-changed=assets/lume.ico");
-    println!("cargo:rerun-if-changed=assets/lume-cbz.ico");
+    println!("cargo:rerun-if-changed=assets/lumeview.ico");
+    println!("cargo:rerun-if-changed=assets/lumeview-cbz.ico");
     if env::var("CARGO_CFG_TARGET_OS").as_deref() != Ok("windows") {
         return;
     }
     let out = PathBuf::from(env::var_os("OUT_DIR").unwrap());
-    let icon = PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").unwrap()).join("assets/lume.ico");
+    let icon = PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").unwrap()).join("assets/lumeview.ico");
     let comic_icon =
-        PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").unwrap()).join("assets/lume-cbz.ico");
-    let rc = out.join("lume.rc");
+        PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").unwrap()).join("assets/lumeview-cbz.ico");
+    let rc = out.join("lumeview.rc");
     std::fs::write(
         &rc,
         format!(

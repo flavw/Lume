@@ -10,7 +10,7 @@ use std::{
 pub type Result<T> = std::result::Result<T, String>;
 
 pub fn tool(name: &str) -> PathBuf {
-    let env_name = format!("LUME_{}", name.to_uppercase());
+    let env_name = format!("LUMEVIEW_{}", name.to_uppercase());
     if let Some(path) = std::env::var_os(env_name) {
         return path.into();
     }
@@ -229,7 +229,7 @@ fn export_impl(
         .save_with_format(input.path(), image::ImageFormat::Png)
         .map_err(|e| format!("Gravar PNG temporário: {e}"))?;
     let temp = tempfile::Builder::new()
-        .prefix(".lume-")
+        .prefix(".lumeview-")
         .suffix(".tmp")
         .tempfile_in(dest.parent().unwrap_or(Path::new(".")))
         .map_err(|e| format!("Criar arquivo de saída: {e}"))?;
@@ -347,7 +347,7 @@ impl FileUndo {
             return Err("O arquivo foi alterado por outro programa após o crop. A restauração foi cancelada para preservar essas alterações.".into());
         }
         let temp = tempfile::Builder::new()
-            .prefix(".lume-restore-")
+            .prefix(".lumeview-restore-")
             .tempfile_in(self.path.parent().unwrap_or(Path::new(".")))
             .map_err(|e| e.to_string())?;
         std::fs::copy(self.backup.path(), temp.path()).map_err(|e| e.to_string())?;
@@ -374,7 +374,7 @@ pub fn lossless_crop(path: &Path, crop: Crop) -> Result<FileUndo> {
     let mut backup = tempfile::NamedTempFile::new().map_err(|e| e.to_string())?;
     backup.write_all(&original).map_err(|e| e.to_string())?;
     let temp = tempfile::Builder::new()
-        .prefix(".lume-crop-")
+        .prefix(".lumeview-crop-")
         .suffix(".jpg")
         .tempfile_in(path.parent().unwrap_or(Path::new(".")))
         .map_err(|e| e.to_string())?;
@@ -465,7 +465,7 @@ pub fn save_lossless_rotation(path: &Path, degrees: u16) -> Result<PathBuf> {
 pub fn save_lossless_crop(path: &Path, crop: Crop) -> Result<PathBuf> {
     let parent = path.parent().unwrap_or(Path::new("."));
     let working = tempfile::Builder::new()
-        .prefix(".lume-selection-")
+        .prefix(".lumeview-selection-")
         .suffix(".jpg")
         .tempfile_in(parent)
         .map_err(|e| e.to_string())?;
@@ -594,9 +594,9 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "Manual release benchmark, needs LUME_BENCH_DIR"]
+    #[ignore = "Manual release benchmark, needs LUMEVIEW_BENCH_DIR"]
     fn benchmark_navigation_decode() {
-        let dir = PathBuf::from(std::env::var_os("LUME_BENCH_DIR").expect("Set LUME_BENCH_DIR"));
+        let dir = PathBuf::from(std::env::var_os("LUMEVIEW_BENCH_DIR").expect("Set LUMEVIEW_BENCH_DIR"));
         for name in ["large.jpg", "large.webp"] {
             let path = dir.join(name);
             let mut old = 0.0;
@@ -718,7 +718,7 @@ mod tests {
 /// Prepare a print snapshot; retain ownership while the system dialog is open.
 pub fn print_image(pixels: &RgbaImage) -> Result<tempfile::TempPath> {
     let snapshot = tempfile::Builder::new()
-        .prefix("lume-print-")
+        .prefix("lumeview-print-")
         .suffix(".png")
         .tempfile()
         .map_err(|e| e.to_string())?;

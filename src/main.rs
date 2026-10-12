@@ -256,7 +256,7 @@ impl App {
                 egui::TextureOptions::NEAREST_REPEAT,
             ),
             logo: cc.egui_ctx.load_texture(
-                "lume-cat",
+                "lumeview-cat",
                 egui::ColorImage::from_rgba_unmultiplied([128, 128], &cat_icon().rgba),
                 egui::TextureOptions::LINEAR,
             ),
@@ -2061,7 +2061,7 @@ impl App {
                 egui::Area::new(egui::Id::new("welcome"))
                     .anchor(egui::Align2::CENTER_CENTER,Vec2::ZERO).show(ctx,|ui|{
                         ui.vertical_centered(|ui|{
-                            ui.label(egui::RichText::new("Lume").size(32.0).color(Color32::WHITE));
+                            ui.label(egui::RichText::new("LumeView").size(32.0).color(Color32::WHITE));
                             ui.label(egui::RichText::new(t("Abra uma imagem ou cole da área de transferência.")).color(Color32::LIGHT_GRAY));
                             ui.add_space(16.0);
                             ui.horizontal(|ui|{
@@ -2147,8 +2147,8 @@ impl App {
             Dialog::ManualRatio { .. } => "Proporção manual",
             Dialog::Resize(..) => "Redimensionar",
             Dialog::Delete { .. } => "Excluir arquivo",
-            Dialog::Help => "Lume · Atalhos",
-            Dialog::About => "Sobre o Lume",
+            Dialog::Help => "LumeView · Atalhos",
+            Dialog::About => "Sobre o LumeView",
             Dialog::Information => "Informações da imagem",
             Dialog::SaveOriginal(_) => "Salvar no formato original",
             Dialog::SaveAs { .. } => "Salvar imagem",
@@ -2396,20 +2396,19 @@ impl App {
                     ui.label(t("JPEG/WebP são abertos diretamente. ImageMagick atende formatos adicionais e exportação sob demanda. jpegtran realiza recorte e rotação JPEG sem recompressão."));
                     ui.label(format!("magick: {}",backend::tool("magick").display()));
                     ui.label(format!("jpegtran: {}",backend::tool("jpegtran").display()));
-                    ui.label(t("Linux: instale ImageMagick 7 com suporte AVIF/WebP e libjpeg-turbo. Variáveis LUME_MAGICK e LUME_JPEGTRAN permitem indicar os executáveis."));
+                    ui.label(t("Linux: instale ImageMagick 7 com suporte AVIF/WebP e libjpeg-turbo. Variáveis LUMEVIEW_MAGICK e LUMEVIEW_JPEGTRAN permitem indicar os executáveis."));
                 },
                 Dialog::About=>{
  ui.horizontal(|ui|{ui.image((self.logo.id(),Vec2::splat(96.0)));ui.vertical(|ui|{
- ui.heading("Lume");ui.label(format!("{} · {} bits",env!("CARGO_PKG_VERSION"),usize::BITS));
+ ui.heading("LumeView");ui.label(format!("{} · {} bits",env!("CARGO_PKG_VERSION"),usize::BITS));
  ui.label(t("Um visualizador de imagens simples e rápido."));
- ui.label(t("Este gatinho se chama Lume."));
- ui.label(t("Um pequeno companheiro para iluminar suas imagens. Miau!"));ui.label(t("Software open source · CC0 1.0"));
+ ui.label(t("Criado por flavw · CC0 1.0"));
  });});ui.add_space(8.0);
  if ui.button(t("Dependências")).clicked(){self.dialog=Some(Dialog::Dependencies);keep=false;}
  }
                 Dialog::Help=>{
                     egui::ScrollArea::vertical().max_height(500.0).show(ui,|ui|{
-                        ui.label(format!("Lume {}",env!("CARGO_PKG_VERSION")));ui.separator();
+                        ui.label(format!("LumeView {}",env!("CARGO_PKG_VERSION")));ui.separator();
                         for(k,v)in [
                             ("← / →","Imagem anterior / próxima; com seleção, mover recorte"),("↑ / ↓","Mover imagem verticalmente; com seleção, mover recorte"),
                             ("Espaço / Backspace","Próxima / anterior"),("Page Down / Page Up","Próxima / anterior"),("Ctrl + navegação","Pular 5 imagens"),
@@ -2660,7 +2659,7 @@ impl eframe::App for App {
         let filename = self.display_name();
         let title = if self.image.is_some() {
             format!(
-                "{filename}{} · {w} × {h} · {:.0}%{} — Lume",
+                "{filename}{} · {w} × {h} · {:.0}%{} — LumeView",
                 if self.dirty { " *" } else { "" },
                 s * self.pixel_ratio * 100.0,
                 if self.files.is_empty() {
@@ -2670,7 +2669,7 @@ impl eframe::App for App {
                 }
             )
         } else {
-            "Lume".into()
+            "LumeView".into()
         };
         ctx.send_viewport_cmd(egui::ViewportCommand::Title(title));
         if self.busy
@@ -2693,8 +2692,8 @@ impl eframe::App for App {
 }
 
 fn cat_icon() -> egui::IconData {
-    let im = image::load_from_memory(include_bytes!("../assets/lume-cat.png"))
-        .expect("Lume icon")
+    let im = image::load_from_memory(include_bytes!("../assets/lumeview-cat.png"))
+        .expect("LumeView icon")
         .resize_exact(128, 128, image::imageops::FilterType::Lanczos3)
         .into_rgba8();
     egui::IconData {
@@ -2705,7 +2704,7 @@ fn cat_icon() -> egui::IconData {
 }
 fn main() -> eframe::Result<()> {
     eframe::run_native(
-        "Lume",
+        "LumeView",
         eframe::NativeOptions {
             viewport: egui::ViewportBuilder::default()
                 .with_icon(cat_icon())

@@ -1,6 +1,6 @@
 [package]
-name = "lume"
-version = "0.26.0"
+name = "lumeview"
+version = "0.27.0"
 edition = "2021"
 description = "Minimal image viewer for Windows and Linux"
 license = "CC0-1.0"
@@ -32,10 +32,10 @@ strip = true
 installer = []
 
 [[bin]]
-name = "lume"
+name = "lumeview"
 path = "src/main.rs"
 
 [[bin]]
-name = "lume-setup"
-path = "src/bin/lume-setup.rs"
+name = "lumeview-setup"
+path = "src/bin/lumeview-setup.rs"
 required-features = ["installer"]
