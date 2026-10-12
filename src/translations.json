@@ -692,8 +692,8 @@
     "Supprimer définitivement"
   ],
   "Open image": [
-    "Abrir imagen",
-    "Ouvrir une image"
+    "Imagen abierta",
+    "Image ouverte"
   ],
   "Rename": [
     "Renombrar",
@@ -1026,5 +1026,69 @@
   "Page integrity check failed (CRC). The ZIP/CBZ archive probably contains an error or corrupted data. Test the archive with 7-Zip or obtain a new copy.": [
     "Falló la verificación de integridad de la página (CRC). Probablemente hay un error o datos dañados en el archivo ZIP/CBZ. Comprueba el archivo con 7-Zip u obtén una nueva copia.",
     "La vérification d’intégrité de la page a échoué (CRC). L’archive ZIP/CBZ contient probablement une erreur ou des données corrompues. Testez l’archive avec 7-Zip ou obtenez une nouvelle copie."
+  ],
+  "Create panorama": [
+    "Crear panorama",
+    "Créer un panorama"
+  ],
+  "Add images": [
+    "Añadir imágenes",
+    "Ajouter des images"
+  ],
+  "The order below defines the image sequence.": [
+    "El orden siguiente define la secuencia de imágenes.",
+    "L’ordre ci-dessous définit la séquence des images."
+  ],
+  "Remove from list": [
+    "Quitar de la lista",
+    "Retirer de la liste"
+  ],
+  "Horizontal": [
+    "Horizontal",
+    "Horizontal"
+  ],
+  "Vertical": [
+    "Vertical",
+    "Vertical"
+  ],
+  "Gap (px)": [
+    "Separación (px)",
+    "Espacement (px)"
+  ],
+  "Gap and background color": [
+    "Color de separación y fondo",
+    "Couleur de l’espacement et du fond"
+  ],
+  "Keeps original sizes and centers images of different sizes.": [
+    "Mantiene el tamaño original y centra imágenes de distintos tamaños.",
+    "Conserve les tailles d’origine et centre les images de tailles différentes."
+  ],
+  "The panorama opens as a new image. Use Save to write it to disk.": [
+    "El panorama se abre como nueva imagen. Usa Guardar para guardarlo.",
+    "Le panorama s’ouvre comme une nouvelle image. Utilisez Enregistrer pour le sauvegarder."
+  ],
+  "Select at least two images.": [
+    "Selecciona al menos dos imágenes.",
+    "Sélectionnez au moins deux images."
+  ],
+  "The panorama is too large (512 MiB memory limit).": [
+    "El panorama es demasiado grande (límite de memoria de 512 MiB).",
+    "Le panorama est trop volumineux (limite mémoire de 512 Mio)."
+  ],
+  "Move up": [
+    "Subir",
+    "Monter"
+  ],
+  "Move down": [
+    "Bajar",
+    "Descendre"
+  ],
+  "Transform": [
+    "Transformar",
+    "Transformer"
+  ],
+  "Add open image": [
+    "Añadir imagen abierta",
+    "Ajouter l’image ouverte"
   ]
 }
