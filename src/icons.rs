@@ -99,6 +99,15 @@ pub fn tool_button(ui: &mut egui::Ui, label: &str, enabled: bool) -> bool {
             )
         };
         match label {
+            "Mover para cima" | "Mover para baixo" => {
+                let y = |n: f32| if label == "Mover para baixo" { 20. - n } else { n };
+                line(&[(10., y(17.)), (10., y(3.))]);
+                line(&[(4., y(9.)), (10., y(3.)), (16., y(9.))]);
+            }
+            "Remover da lista" => {
+                line(&[(5., 5.), (15., 15.)]);
+                line(&[(15., 5.), (5., 15.)]);
+            }
             "Abrir" => {
                 line(&[
                     (1., 16.),
