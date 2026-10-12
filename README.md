@@ -16,6 +16,7 @@ Download **LumeView-Setup.exe** from the [latest release](https://github.com/fla
 - Wallpaper crops: Free, 1:1, 16:9, 9:16, 10:16, 8:16, original and custom aspect ratios; rule-of-thirds grid and resizable handles.
 - Lossless JPEG cropping and rotation through jpegtran. Numbered copies preserve the source; imperfect rotations are rejected.
 - JPEG and WebP export at quality 80 by default, configurable quality, and lossless PNG export.
+- Create horizontal or vertical panoramas with ordered images, original sizes and an optional colored gap (zero by default). The result opens as a new document for saving.
 - AI generation metadata inspection and copying, including supported Stable Diffusion parameters and ComfyUI JSON stored in PNG, JPEG and WebP metadata.
 - Image information, clipboard images, rename with separate extension field, file copying/moving and deletion confirmation.
 - CBZ comic reading, basic image adjustments, undo/redo and unsaved-change confirmation.
