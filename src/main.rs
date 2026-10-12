@@ -7,6 +7,7 @@ mod icons;
 mod image_details;
 mod loader;
 mod model;
+mod panorama;
 mod preferences;
 mod tiles;
 use i18n::{t, Language};
@@ -108,11 +109,13 @@ enum PendingAction {
     Load(PathBuf),
     Navigate(isize),
     Paste,
+    Panorama,
     Delete(bool),
     Close,
 }
 
 enum Dialog {
+    Panorama { files: Vec<panorama::Input>, vertical: bool, gap: String, color: [u8;3] },
     ManualRatio {
         width: String,
         height: String,
@@ -126,7 +129,7 @@ enum Dialog {
         selected: usize,
     },
     Rename(String, String, bool),
-    Resize(u32, u32, bool),
+    Resize(String, String, bool),
     Delete {
         permanent: bool,
         cancel_selected: bool,
@@ -151,6 +154,7 @@ enum Dialog {
     Overwrite(PathBuf, Format),
 }
 enum Message {
+    Panorama(backend::Result<RgbaImage>),
     Book(backend::Result<Arc<comic::Book>>),
     Export(backend::Result<()>),
     Print(backend::Result<tempfile::TempPath>),
@@ -539,6 +543,34 @@ impl App {
                         Err(e) => self.fail(e),
                     }
                 }
+                Message::Panorama(result) => {
+                    self.busy = false;
+                    match result {
+                        Ok(pixels) => {
+                            self.path = None;
+                            self.file_bytes = None;
+                            self.created = None;
+                            self.book = None;
+                            self.files.clear();
+                            self.jpeg = None;
+                            self.file_undo = None;
+                            self.loader.cancel();
+                            self.loading = None;
+                            self.image = Some(Arc::new(pixels));
+                            self.history.clear();
+                            self.redo.clear();
+                            self.selection = None;
+                            self.dirty = true;
+                            self.pan = Vec2::ZERO;
+                            self.index = 0;
+                            self.lossless = false;
+                            self.align_width_top = self.fit == Fit::Width;
+                            self.zoom_notice = None;
+                            self.update_texture(ctx);
+                        }
+                        Err(e) => self.fail(t(&e)),
+                    }
+                }
                 Message::Book(r) => {
                     self.busy = false;
                     match r {
@@ -664,6 +696,10 @@ impl App {
         {
             self.open(p);
         }
+    }
+    fn panorama_dialog(&mut self) {
+        if self.confirm_abandon(PendingAction::Panorama) { return; }
+        self.dialog = Some(Dialog::Panorama { files: Vec::new(), vertical: false, gap: "0".into(), color: [0,0,0] });
     }
     fn dimensions(&self) -> (u32, u32) {
         self.image
@@ -1366,7 +1402,7 @@ impl App {
                     }),
                     Key::R => {
                         let (w, h) = self.dimensions();
-                        self.dialog = Some(Dialog::Resize(w, h, true));
+                        self.dialog = Some(Dialog::Resize(w.to_string(), h.to_string(), true));
                     }
                     Key::S => {
                         if m.shift {
@@ -1592,23 +1628,15 @@ impl App {
                                     }
                                 }
                                 ui.separator();
-                                if item(
-                                    ui,
-                                    &format!("Exportar JPEG (Qld {}%)", self.settings.jpeg_quality),
-                                    "S",
-                                ) {
-                                    self.export_dialog(Format::Jpeg);
-                                }
-                                if item(
-                                    ui,
-                                    &format!("Exportar WebP (Qld {}%)", self.settings.webp_quality),
-                                    "Ctrl+Shift+S",
-                                ) {
-                                    self.export_dialog(Format::Webp);
-                                }
-                                if item(ui, "Exportar PNG (sem perdas)", "") {
-                                    self.export_dialog(Format::Png);
-                                }
+                                ui.menu_button(t("Exportar"), |ui| {
+                                    for (format, label, shortcut) in [
+                                        (Format::Jpeg, format!("Exportar JPEG (Qld {}%)", self.settings.jpeg_quality), "S"),
+                                        (Format::Png, "Exportar PNG (sem perdas)".to_owned(), ""),
+                                        (Format::Webp, format!("Exportar WebP (Qld {}%)", self.settings.webp_quality), "Ctrl+Shift+S"),
+                                    ] {
+                                        if item(ui, &label, shortcut) { self.export_dialog(format); }
+                                    }
+                                });
                                 if item(ui, "Converter em lote", "") {
                                     self.dialog = Some(Dialog::Batch {
                                         files: vec![],
@@ -1677,6 +1705,8 @@ impl App {
                                 }
                             });
                             ui.menu_button(t("Imagem"), |ui| {
+                                if item(ui, "Criar panorama", "") { self.panorama_dialog(); }
+                                ui.separator();
                                 if item(ui, "Informações da imagem", "I") {
                                     self.show_information();
                                 }
@@ -1697,6 +1727,7 @@ impl App {
                                     self.invert_crop_ratio();
                                 }
                                 ui.separator();
+                                ui.menu_button(t("Transformar"), |ui| {
                                 ui.add_enabled_ui(self.jpeg.is_some() && !self.dirty, |ui| {
                                     ui.menu_button(t("Rotação JPEG sem perdas"), |ui| {
                                         for (label, degrees) in [
@@ -1710,9 +1741,11 @@ impl App {
                                         }
                                     });
                                 });
-                                ui.separator();
                                 if item(ui, "Girar 90° à direita", "") {
                                     self.edit(ctx, image::imageops::rotate90);
+                                }
+                                if item(ui, "Girar 180°", "") {
+                                    self.edit(ctx, image::imageops::rotate180);
                                 }
                                 if item(ui, "Girar 90° à esquerda", "") {
                                     self.edit(ctx, image::imageops::rotate270);
@@ -1723,6 +1756,7 @@ impl App {
                                 if item(ui, "Espelhar verticalmente", "") {
                                     self.edit(ctx, image::imageops::flip_vertical);
                                 }
+                                });
                                 if item(ui, "Escala de cinza", "Ctrl+G") {
                                     self.edit(ctx, |im| {
                                         image::DynamicImage::ImageRgba8(im.clone())
@@ -1732,7 +1766,7 @@ impl App {
                                 }
                                 if item(ui, "Redimensionar", "Ctrl+R") {
                                     let (w, h) = self.dimensions();
-                                    self.dialog = Some(Dialog::Resize(w, h, true));
+                                    self.dialog = Some(Dialog::Resize(w.to_string(), h.to_string(), true));
                                 }
                             });
                             ui.menu_button(t("Exibir"), |ui| {
@@ -1969,6 +2003,20 @@ impl App {
                 if self.loading.is_none() && ((settled && self.fit==Fit::Large && sx*ctx.pixels_per_point()<0.999)||sx*ctx.pixels_per_point()>preview_scale*1.01||sy*ctx.pixels_per_point()>texture.size()[1]as f32/h as f32*1.01){
                     self.tiles.draw(ctx,ui.painter(),im.clone(),shown,rect,texture.id());
                 }else{ui.painter().image(texture.id(),shown,Rect::from_min_max(Pos2::ZERO,Pos2::new(1.0,1.0)),Color32::WHITE);}
+                if response.clicked_by(egui::PointerButton::Primary) {
+                    if let (Some(crop), Some(pointer)) = (self.selection, response.interact_pointer_pos()) {
+                        let selection_rect = Rect::from_min_size(
+                            shown.min + Vec2::new(crop.x as f32 * sx, crop.y as f32 * sy),
+                            Vec2::new(crop.w as f32 * sx, crop.h as f32 * sy),
+                        );
+                        // Keep the resize handles clickable just outside the border.
+                        if !selection_rect.expand(10.0).contains(pointer) {
+                            self.selection = None;
+                            self.lossless = false;
+                            self.drag_start = None;
+                        }
+                    }
+                }
                 let mut free_selection_started = false;
                 if !self.fullscreen && !self.busy && self.loading.is_none()
                     && matches!(self.fit, Fit::Large | Fit::All)
@@ -2163,6 +2211,7 @@ impl App {
         };
         let mut keep = true;
         let title = match &dialog {
+            Dialog::Panorama { .. } => "Criar panorama",
             Dialog::Unsaved { .. } => "Alterações não salvas",
             Dialog::FolderEnd { .. } => "Fim da pasta",
             Dialog::Rename(..) => "Renomear arquivo",
@@ -2207,6 +2256,7 @@ impl App {
                                     },
                                     PendingAction::Navigate(delta) => self.navigate(delta),
                                     PendingAction::Paste => self.clipboard_paste(ctx),
+                                    PendingAction::Panorama => self.panorama_dialog(),
                                     PendingAction::Delete(permanent) => self.delete(permanent),
                                     PendingAction::Close => self.close_program(ctx),
                                 }
@@ -2276,11 +2326,23 @@ impl App {
                     }
                 },
                 Dialog::Resize(w,h,locked)=>{
-                    let(ow,oh)=self.dimensions();let oldw=*w;let oldh=*h;
-                    ui.horizontal(|ui|{ui.label(t("Largura"));ui.add(egui::DragValue::new(w).range(1..=30000));ui.label(t("Altura"));ui.add(egui::DragValue::new(h).range(1..=30000));});
+                    let (ow,oh)=self.dimensions();
+                    let mut width_changed=false; let mut height_changed=false;
+                    ui.horizontal(|ui| {
+                        ui.label(t("Largura")); width_changed=ui.add(egui::TextEdit::singleline(w).desired_width(90.0)).changed();
+                        ui.label(t("Altura")); height_changed=ui.add(egui::TextEdit::singleline(h).desired_width(90.0)).changed();
+                    });
                     ui.checkbox(locked,t("Manter proporção"));
-                    if *locked{if *w!=oldw{*h=(*w as f64*oh as f64/ow as f64).round().max(1.0)as u32;}else if *h!=oldh{*w=(*h as f64*ow as f64/oh as f64).round().max(1.0)as u32;}}
-                    if ui.button(t("Aplicar")).clicked(){if *w as u64 * *h as u64>100_000_000{self.fail("Limite desta versão: 100 megapixels.");}else{let(w,h)=(*w,*h);self.edit(ctx,|im|image::imageops::resize(im,w,h,image::imageops::FilterType::Lanczos3));keep=false;}}
+                    let parse = |s: &str| s.trim().parse::<u32>().ok().filter(|n| (1..=30000).contains(n));
+                    if *locked {
+                        if width_changed { if let Some(n)=parse(w) { *h=((n as f64*oh as f64/ow as f64).round().max(1.0) as u32).to_string(); } }
+                        else if height_changed { if let Some(n)=parse(h) { *w=((n as f64*ow as f64/oh as f64).round().max(1.0) as u32).to_string(); } }
+                    }
+                    let dimensions=parse(w).zip(parse(h));
+                    if ui.add_enabled(dimensions.is_some(),egui::Button::new(t("Aplicar"))).clicked() {
+                        if let Some((w,h))=dimensions { if w as u64*h as u64>100_000_000 { self.fail("Limite desta versão: 100 megapixels."); }
+                        else { self.edit(ctx,|im|image::imageops::resize(im,w,h,image::imageops::FilterType::Lanczos3));keep=false; } }
+                    }
                 },
                 Dialog::Delete { permanent, cancel_selected }=>{
                     // Own the two-button keyboard cycle so Tab never escapes this dialog.
@@ -2457,6 +2519,46 @@ impl App {
                     ui.set_width(480.0);ui.add(egui::TextEdit::singleline(query).desired_width(f32::INFINITY).hint_text(t("Parte do nome do arquivo")));
                     let q=query.to_lowercase();let matches:Vec<_>=self.files.iter().enumerate().filter(|(_,p)|p.file_name().unwrap_or_default().to_string_lossy().to_lowercase().contains(&q)).map(|(n,p)|(n,p.file_name().unwrap_or_default().to_string_lossy().into_owned())).collect();
                     egui::ScrollArea::vertical().max_height(360.0).show(ui,|ui|{for(n,name)in matches{if ui.add_sized([ui.available_width(),30.0],egui::Button::new(name)).clicked(){self.navigate(n as isize-self.index as isize);keep=false;}}});
+                },
+                Dialog::Panorama { files, vertical, gap, color } => {
+                    ui.set_width(520.0);
+                    if ui.button(t("Adicionar imagens")).clicked() {
+                        if let Some(selected) = rfd::FileDialog::new()
+                            .add_filter(t("Imagens"), &["jpg","jpeg","png","webp","avif","gif","bmp","tif","tiff","heic","ico"])
+                            .pick_files() { files.extend(selected.into_iter().map(panorama::Input::File)); }
+                    }
+                    if ui.add_enabled(self.image.is_some(), egui::Button::new(t("Adicionar imagem aberta"))).clicked() {
+                        if let Some(pixels) = &self.image {
+                            files.push(panorama::Input::Opened { pixels: pixels.clone(), name: self.path.as_ref().and_then(|p| p.file_name()).map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| t("Documento em memória")) });
+                        }
+                    }
+                    ui.label(t("A ordem abaixo define a sequência das imagens."));
+                    let mut change = None;
+                    egui::ScrollArea::vertical().max_height(180.0).show(ui, |ui| {
+                        for (index,path) in files.iter().enumerate() {
+                            ui.horizontal(|ui| {
+                                if icons::tool_button(ui,"Mover para cima",index > 0) { change = Some((index,0)); }
+                                if icons::tool_button(ui,"Mover para baixo",index + 1 < files.len()) { change = Some((index,1)); }
+                                if icons::tool_button(ui,"Remover da lista",true) { change = Some((index,2)); }
+                                ui.label(path.name()).on_hover_text(path.description());
+                            });
+                        }
+                    });
+                    if let Some((index,action)) = change { match action { 0 => files.swap(index,index-1), 1 => files.swap(index,index+1), _ => { files.remove(index); } } }
+                    ui.separator();
+                    ui.horizontal(|ui| { ui.radio_value(vertical,false,t("Horizontal")); ui.radio_value(vertical,true,t("Vertical")); });
+                    ui.horizontal(|ui| { ui.label(t("Espaçamento (px)")); ui.add(egui::TextEdit::singleline(gap).desired_width(90.0)); });
+                    preferences::color_button(ui,&t("Cor do espaçamento e fundo"),color);
+                    ui.label(t("Mantém o tamanho original e centraliza imagens de tamanhos diferentes."));
+                    ui.label(t("O panorama abre como nova imagem. Use Salvar para gravar."));
+                    let parsed_gap=gap.trim().parse::<u32>().ok().filter(|n| *n <= 10000);
+                    if ui.add_enabled(files.len() >= 2 && parsed_gap.is_some(),egui::Button::new(t("Criar panorama"))).clicked() {
+                        let (files,vertical,gap,color) = (files.clone(),*vertical,parsed_gap.unwrap(),*color);
+                        self.busy = true;
+                        let tx = self.tx.clone();
+                        std::thread::spawn(move || { let _ = tx.send(Message::Panorama(panorama::create(&files,vertical,gap,color))); });
+                        keep = false;
+                    }
                 },
                 Dialog::Batch{files,dest,format,quality}=>{
                     ui.label(format!("{} {}",files.len(),t("imagens selecionadas")));
