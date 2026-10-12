@@ -2,6 +2,7 @@ use std::{env, path::PathBuf, process::Command};
 fn main() {
     println!("cargo:rerun-if-changed=assets/lumeview.ico");
     println!("cargo:rerun-if-changed=assets/lumeview-cbz.ico");
+    println!("cargo:rerun-if-changed=assets/lumeview-image.ico");
     if env::var("CARGO_CFG_TARGET_OS").as_deref() != Ok("windows") {
         return;
     }
@@ -9,13 +10,15 @@ fn main() {
     let icon = PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").unwrap()).join("assets/lumeview.ico");
     let comic_icon =
         PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").unwrap()).join("assets/lumeview-cbz.ico");
+    let image_icon = PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").unwrap()).join("assets/lumeview-image.ico");
     let rc = out.join("lumeview.rc");
     std::fs::write(
         &rc,
         format!(
-            "1 ICON \"{}\"\n2 ICON \"{}\"\n",
+            "1 ICON \"{}\"\n2 ICON \"{}\"\n3 ICON \"{}\"\n",
             icon.display().to_string().replace('\\', "/"),
-            comic_icon.display().to_string().replace('\\', "/")
+            comic_icon.display().to_string().replace('\\', "/"),
+            image_icon.display().to_string().replace('\\', "/")
         ),
     )
     .unwrap();

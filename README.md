@@ -17,10 +17,9 @@ Download **LumeView-Setup.exe** from the [latest release](https://github.com/fla
 - Lossless JPEG cropping and rotation through jpegtran. Numbered copies preserve the source; imperfect rotations are rejected.
 - JPEG and WebP export at quality 80 by default, configurable quality, and lossless PNG export.
 - AI generation metadata inspection and copying, including supported Stable Diffusion parameters and ComfyUI JSON stored in PNG, JPEG and WebP metadata.
-- AI metadata reading and copying.
 - Image information, clipboard images, rename with separate extension field, file copying/moving and deletion confirmation.
 - CBZ comic reading, basic image adjustments, undo/redo and unsaved-change confirmation.
-- Dark, light, system and customizable neon themes; English and Portuguese interfaces.
+- Dark, light, system and customizable neon themes; English, Portuguese, Spanish and French interfaces.
 
 ## Quick controls
 
@@ -28,8 +27,8 @@ Download **LumeView-Setup.exe** from the [latest release](https://github.com/fla
 | --- | --- |
 | Left / Right | Previous / next image |
 | Ctrl+O | Open an image |
-| Enter / F | Toggle fullscreen |
-| 1–7 | Choose a zoom mode |
+| Enter / F / left double-click | Toggle fullscreen |
+| 1–7 | Choose a zoom mode; retained while navigating |
 | Ctrl or Alt + mouse wheel | Zoom |
 | I | Image information and AI metadata |
 | P | Preferences |
@@ -41,7 +40,7 @@ Download **LumeView-Setup.exe** from the [latest release](https://github.com/fla
 | Delete / Shift+Delete | Recycle / permanently delete, with confirmation |
 | F1 | All shortcuts |
 
-Without modifiers, the mouse wheel navigates images or scrolls vertically in the width-fit reading mode. The default zoom fits large images to the window without enlarging small ones. The last image opens a restart dialog unless automatic restart is enabled.
+Without modifiers, the mouse wheel navigates images or scrolls vertically in the width-fit reading mode. The default zoom fits large images to the window without enlarging small ones. Selected zoom modes persist between images; width-fit pages start at the top. Left-click and drag creates a freeform selection in zoom modes 2 and 3 outside fullscreen. The last image opens a restart dialog unless automatic restart is enabled.
 
 ## Build from source
 
@@ -59,6 +58,10 @@ JPEG/PNG/WebP viewing uses native libraries. Additional formats such as AVIF and
 cargo test --bin lumeview
 cargo clippy --bin lumeview -- -D warnings
 ```
+
+## Build the Windows EXE installer
+
+After building the release executable, run `powershell -File installer/build.ps1`. Place the ImageMagick and jpegtran distributions under `tools/` first. The script creates `LumeView-Setup.exe`; `/S` enables silent installation. See [installer exit codes](installer/STORE-INSTALLER.md).
 
 ## License and AI assistance
 

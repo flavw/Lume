@@ -1,3 +1,10 @@
 /target/
 /lumeview.exe
 /lumeview
+
+/build/
+/msix/sdk/
+/msix/staging/
+/msix/verification/
+/*.msix
+/LumeView-Setup.exe

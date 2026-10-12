@@ -42,12 +42,12 @@ impl Book {
     pub fn open(source: PathBuf) -> backend::Result<Arc<Self>> {
         let file = std::fs::File::open(&source).map_err(|e| e.to_string())?;
         let mut archive =
-            zip::ZipArchive::new(file).map_err(|e| format!("Arquivo ZIP inválido: {e}"))?;
+            zip::ZipArchive::new(file).map_err(|_| "Não foi possível abrir o CBZ. O arquivo está corrompido ou não é um arquivo ZIP válido.".to_owned())?;
         let mut entries = Vec::new();
         for index in 0..archive.len() {
             let entry = archive
                 .by_index(index)
-                .map_err(|e| format!("Não foi possível ler o quadrinho: {e}"))?;
+                .map_err(|_| "Não foi possível ler as páginas do CBZ. O arquivo pode estar corrompido ou protegido por senha.".to_owned())?;
             if !entry.is_dir()
                 && entry.size() > 0
                 && entry.size() <= MAX_PAGE
@@ -112,7 +112,11 @@ impl Book {
         let mut temp =
             tempfile::NamedTempFile::new_in(self.temp.path()).map_err(|e| e.to_string())?;
         let count =
-            std::io::copy(&mut entry.take(MAX_PAGE + 1), &mut temp).map_err(|e| e.to_string())?;
+            std::io::copy(&mut entry.take(MAX_PAGE + 1), &mut temp).map_err(|e| {
+                if e.to_string().eq_ignore_ascii_case("Invalid checksum") {
+                    "Falha na verificação de integridade da página (CRC). Provavelmente há um erro ou corrupção no arquivo ZIP/CBZ. Teste o arquivo com o 7-Zip ou obtenha uma nova cópia.".to_owned()
+                } else { e.to_string() }
+            })?;
         if count > MAX_PAGE {
             return Err("Página grande demais.".into());
         }
@@ -128,6 +132,23 @@ pub fn load(p: &Path) -> Option<backend::Result<backend::Loaded>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn corrupt_page_crc_has_localizable_error_and_is_not_cached() {
+        let fixture = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/sample.cbz");
+        let mut data = std::fs::read(fixture).unwrap();
+        let headers: Vec<usize> = data.windows(4).enumerate()
+            .filter_map(|(i, bytes)| (bytes == b"PK\x01\x02").then_some(i)).collect();
+        assert!(!headers.is_empty());
+        for i in headers { data[i + 16] ^= 1; }
+        let dir = tempfile::tempdir().unwrap();
+        let source = dir.path().join("bad.cbz");
+        std::fs::write(&source, data).unwrap();
+        let book = Book::open(source).unwrap();
+        let error = book.materialize(0).unwrap_err();
+        assert!(error.contains("(CRC)"));
+        assert!(error.contains("ZIP/CBZ"));
+        assert!(!book.pages[0].exists());
+    }
     #[test]
     fn zip_pages_are_lazy_cached_and_naturally_sorted() {
         for name in ["sample.cbz"] {

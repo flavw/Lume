@@ -405,10 +405,14 @@ impl App {
         if self.busy {
             return;
         }
-        self.fit = self.settings.fit;
-        self.wheel_fit = self.settings.fit;
+        self.fit = self.wheel_fit;
         self.zoom = 1.0;
-        self.pan = Vec2::ZERO;
+        // Keep the currently displayed page in place while the next one loads.
+        // install_prepared resets the new page and aligns width-fit at the top
+        // before its first canvas paint.
+        if self.fit != Fit::Width {
+            self.pan = Vec2::ZERO;
+        }
         self.zoom_notice = None;
         self.last_navigation = Instant::now();
         self.tiles.clear();
@@ -1056,7 +1060,10 @@ impl App {
                     self.update_texture(ctx);
                 }
             }
-            Err(e) => self.fail(e.to_string()),
+            Err(arboard::Error::ContentNotAvailable) => {
+                self.fail(t("Não há uma imagem na área de transferência."));
+            }
+            Err(_) => self.fail(t("Não foi possível acessar a área de transferência.")),
         }
     }
     fn move_file(&mut self, copy: bool) {
@@ -1962,6 +1969,29 @@ impl App {
                 if self.loading.is_none() && ((settled && self.fit==Fit::Large && sx*ctx.pixels_per_point()<0.999)||sx*ctx.pixels_per_point()>preview_scale*1.01||sy*ctx.pixels_per_point()>texture.size()[1]as f32/h as f32*1.01){
                     self.tiles.draw(ctx,ui.painter(),im.clone(),shown,rect,texture.id());
                 }else{ui.painter().image(texture.id(),shown,Rect::from_min_max(Pos2::ZERO,Pos2::new(1.0,1.0)),Color32::WHITE);}
+                let mut free_selection_started = false;
+                if !self.fullscreen && !self.busy && self.loading.is_none()
+                    && matches!(self.fit, Fit::Large | Fit::All)
+                    && response.drag_started_by(egui::PointerButton::Primary) {
+                    if let Some(origin) = ctx.input(|i| i.pointer.press_origin()) {
+                        let touches_selection = self.selection.is_some_and(|crop| {
+                            Rect::from_min_size(shown.min + Vec2::new(crop.x as f32 * sx, crop.y as f32 * sy),
+                                Vec2::new(crop.w as f32 * sx, crop.h as f32 * sy)).expand(14.0).contains(origin)
+                        });
+                        if shown.contains(origin) && !touches_selection {
+                            let crop = Crop {
+                                x: ((origin.x - shown.min.x) / sx).floor().clamp(0.0, w.saturating_sub(1) as f32) as u32,
+                                y: ((origin.y - shown.min.y) / sy).floor().clamp(0.0, h.saturating_sub(1) as f32) as u32,
+                                w: 1, h: 1,
+                            };
+                            self.ratio = None;
+                            self.lossless = false;
+                            self.selection = Some(crop);
+                            self.drag_start = Some((origin, crop, 0));
+                            free_selection_started = true;
+                        }
+                    }
+                }
                 if let Some(c)=self.selection {
                     let sel=Rect::from_min_size(shown.min+Vec2::new(c.x as f32*sx,c.y as f32*sy),Vec2::new(c.w as f32*sx,c.h as f32*sy));
                     let dark=Color32::from_black_alpha(145);
@@ -1995,7 +2025,7 @@ impl App {
                         ui.painter().text(pos+offset,egui::Align2::LEFT_TOP,&label,font.clone(),Color32::BLACK);
                     }
                     ui.painter().text(pos,egui::Align2::LEFT_TOP,label,font,Color32::WHITE);
-                    if response.drag_started_by(egui::PointerButton::Primary) {
+                    if response.drag_started_by(egui::PointerButton::Primary) && !free_selection_started {
                         if let Some(p)=response.interact_pointer_pos(){
                             let corner=[sel.left_top(),sel.right_top(),sel.left_bottom(),sel.right_bottom()].iter().position(|q|q.distance(p)<14.0);
                             let edge=if p.y>=sel.top()-10.0&&p.y<=sel.bottom()+10.0&&(p.x-sel.left()).abs()<10.0{Some(6)}else if p.y>=sel.top()-10.0&&p.y<=sel.bottom()+10.0&&(p.x-sel.right()).abs()<10.0{Some(7)}else if p.x>=sel.left()-10.0&&p.x<=sel.right()+10.0&&(p.y-sel.top()).abs()<10.0{Some(8)}else if p.x>=sel.left()-10.0&&p.x<=sel.right()+10.0&&(p.y-sel.bottom()).abs()<10.0{Some(9)}else{None};
@@ -2057,7 +2087,7 @@ impl App {
                     if item(ui,"Aplicar recorte","Ctrl+Y"){self.apply_crop(ctx);}
                     if item(ui,"Copiar","Ctrl+C"){self.clipboard_copy();}
                 });
-            }else if !self.busy && self.loading.is_none() {
+            }else if !self.busy && self.loading.is_none() && self.error.is_none() && self.dialog.is_none() {
                 egui::Area::new(egui::Id::new("welcome"))
                     .anchor(egui::Align2::CENTER_CENTER,Vec2::ZERO).show(ctx,|ui|{
                         ui.vertical_centered(|ui|{
@@ -2077,15 +2107,11 @@ impl App {
                 let title=self.display_name();
                 let [r,g,b]=self.settings.title_color;
                 let color=Color32::from_rgb(r,g,b);
-                let outline=if (r as u16+g as u16+b as u16)<384 {Color32::WHITE}else{Color32::BLACK};
                 let horizontal=match self.settings.title_alignment {1=>egui::Align::Center,2=>egui::Align::Max,_=>egui::Align::Min};
                 let vertical=match self.settings.title_position {1=>egui::Align::Center,2=>egui::Align::Max,_=>egui::Align::Min};
                 let anchor=egui::Align2([horizontal,vertical]);
                 let pos=anchor.pos_in_rect(&rect.shrink(12.0));
                 let font=egui::FontId::proportional(self.settings.title_size.clamp(10.0,36.0));
-                for offset in [Vec2::new(-1.0,0.0),Vec2::new(1.0,0.0),Vec2::new(0.0,-1.0),Vec2::new(0.0,1.0)] {
-                    ui.painter().text(pos+offset,anchor,&title,font.clone(),outline);
-                }
                 ui.painter().text(pos,anchor,title,font,color);
             }
             if let Some((label, started))=&self.zoom_notice {
@@ -2114,18 +2140,14 @@ impl App {
 
     fn dialogs(&mut self, ctx: &egui::Context) {
         if let Some(e) = self.error.clone() {
-            egui::Window::new(t("Aviso"))
-                .title_bar(false)
+            egui::Modal::new(egui::Id::new("error-dialog"))
                 .frame(
                     egui::Frame::window(&ctx.style())
                         .inner_margin(16.0)
                         .corner_radius(8),
                 )
-                .collapsible(false)
-                .resizable(false)
-                .anchor(egui::Align2::CENTER_CENTER, Vec2::ZERO)
                 .show(ctx, |ui| {
-                    ui.set_max_width(560.0);
+                    ui.set_width(480.0);
                     if dialog_header(ui, "Aviso") {
                         self.error = None;
                     }
@@ -2383,8 +2405,10 @@ impl App {
                                     }
                                     _=>{
                                         ui.heading(t("Idioma"));ui.separator();
-                                        ui.radio_value(&mut self.settings.language,Language::Portuguese,"Português");
                                         ui.radio_value(&mut self.settings.language,Language::English,"English");
+                                        ui.radio_value(&mut self.settings.language,Language::Spanish,"Español");
+                                        ui.radio_value(&mut self.settings.language,Language::French,"Français");
+                                        ui.radio_value(&mut self.settings.language,Language::Portuguese,"Português");
                                     }
                                 }
                             });
@@ -2402,6 +2426,7 @@ impl App {
  ui.horizontal(|ui|{ui.image((self.logo.id(),Vec2::splat(96.0)));ui.vertical(|ui|{
  ui.heading("LumeView");ui.label(format!("{} · {} bits",env!("CARGO_PKG_VERSION"),usize::BITS));
  ui.label(t("Um visualizador de imagens simples e rápido."));
+ ui.label(t("Este gatinho se chama Lume."));
  ui.label(t("Criado por flavw · CC0 1.0"));
  });});ui.add_space(8.0);
  if ui.button(t("Dependências")).clicked(){self.dialog=Some(Dialog::Dependencies);keep=false;}
@@ -2413,7 +2438,7 @@ impl App {
                             ("← / →","Imagem anterior / próxima; com seleção, mover recorte"),("↑ / ↓","Mover imagem verticalmente; com seleção, mover recorte"),
                             ("Espaço / Backspace","Próxima / anterior"),("Page Down / Page Up","Próxima / anterior"),("Ctrl + navegação","Pular 5 imagens"),
                             ("Ctrl + 0–9","Avançar N (0 = 10); Shift inverte"),("Ctrl+Home / Ctrl+End","Primeira / última imagem"),
-                            ("+ ou = / −","Ampliar / reduzir"),("1–7","Modos de ajuste, conforme menu Exibir"),("Enter / F","Tela cheia / janela"),("T","Mostrar / ocultar título da arte (tela cheia)"),
+                            ("+ ou = / −","Ampliar / reduzir"),("1–7","Modos de ajuste, conforme menu Exibir"),("Enter / F","Tela cheia / janela"),("Duplo clique esquerdo","Tela cheia / janela"),("T","Mostrar / ocultar título da arte (tela cheia)"),
                             ("Esc","Cancelar seleção, sair da tela cheia ou fechar"),("F2 / F6","Renomear, incluindo extensão"),("F5 / U","Recarregar imagem e pasta"),
                             ("F7 / F8","Mover / copiar arquivo"),("Del / Shift+Del","Lixeira / exclusão permanente, com confirmação"),("F11","Ocultar / mostrar cursor em tela cheia"),
                             ("I","Informações da imagem"),("P","Preferências"),("S","Exportar JPEG / WebP"),("Ctrl+P","Imprimir"),("Ctrl+O","Abrir imagem"),("Ctrl+S","Salvar imagem"),("Ctrl+Shift+S","Exportar WebP"),("Ctrl+A","Selecionar / desselecionar tudo"),
@@ -2692,7 +2717,7 @@ impl eframe::App for App {
 }
 
 fn cat_icon() -> egui::IconData {
-    let im = image::load_from_memory(include_bytes!("../assets/lumeview-cat.png"))
+    let im = image::load_from_memory(include_bytes!("../assets/lumeview-cat.webp"))
         .expect("LumeView icon")
         .resize_exact(128, 128, image::imageops::FilterType::Lanczos3)
         .into_rgba8();

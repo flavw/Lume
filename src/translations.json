@@ -1,0 +1,1030 @@
+{
+  "Format": [
+    "Formato",
+    "Format"
+  ],
+  "Save image": [
+    "Guardar imagen",
+    "Enregistrer l’image"
+  ],
+  "PNG preserves the image losslessly; percentage quality does not apply.": [
+    "PNG conserva la imagen sin pérdidas; no se aplica calidad porcentual.",
+    "PNG conserve l’image sans perte ; la qualité en pourcentage ne s’applique pas."
+  ],
+  "Shortcuts": [
+    "Atajos",
+    "Raccourcis"
+  ],
+  "End of folder": [
+    "Fin de la carpeta",
+    "Fin du dossier"
+  ],
+  "You have reached the last image in this folder.": [
+    "Has llegado a la última imagen de esta carpeta.",
+    "Vous avez atteint la dernière image de ce dossier."
+  ],
+  "Return to the first image or open another image?": [
+    "¿Volver a la primera imagen o abrir otra?",
+    "Revenir à la première image ou en ouvrir une autre ?"
+  ],
+  "Restart": [
+    "Reiniciar",
+    "Recommencer"
+  ],
+  "Open another image": [
+    "Abrir otra imagen",
+    "Ouvrir une autre image"
+  ],
+  "Automatically restart at the end of the folder": [
+    "Volver automáticamente al inicio al llegar al final",
+    "Revenir automatiquement au début à la fin du dossier"
+  ],
+  "Tab or arrows: select · Enter: confirm · Esc: cancel": [
+    "Tab o flechas: elegir · Enter: confirmar · Esc: cancelar",
+    "Tab ou flèches : choisir · Entrée : confirmer · Échap : annuler"
+  ],
+  "Created": [
+    "Creación",
+    "Création"
+  ],
+  "File creation time on the filesystem": [
+    "Fecha de creación del archivo en el sistema",
+    "Date de création du fichier dans le système"
+  ],
+  "AI content copied.": [
+    "Contenido de IA copiado.",
+    "Contenu IA copié."
+  ],
+  "Toolbar": [
+    "Barra de herramientas",
+    "Barre d’outils"
+  ],
+  "Status bar": [
+    "Barra de estado",
+    "Barre d’état"
+  ],
+  "Previous": [
+    "Anterior",
+    "Précédente"
+  ],
+  "Next": [
+    "Siguiente",
+    "Suivante"
+  ],
+  "Fit to window": [
+    "Ajustar a la ventana",
+    "Adapter à la fenêtre"
+  ],
+  "No image open": [
+    "Ninguna imagen abierta",
+    "Aucune image ouverte"
+  ],
+  "Modified": [
+    "Modificada",
+    "Modifiée"
+  ],
+  "Cancel": [
+    "Cancelar",
+    "Annuler"
+  ],
+  "Close": [
+    "Cerrar",
+    "Fermer"
+  ],
+  "This file will be permanently deleted.": [
+    "Este archivo se eliminará permanentemente.",
+    "Ce fichier sera supprimé définitivement."
+  ],
+  "You can restore the file from the recycle bin.": [
+    "Puedes restaurar el archivo desde la papelera.",
+    "Vous pouvez restaurer le fichier depuis la corbeille."
+  ],
+  "Enter: confirm choice · Tab: switch · Esc: cancel": [
+    "Enter: confirmar · Tab: alternar · Esc: cancelar",
+    "Entrée : confirmer · Tab : changer · Échap : annuler"
+  ],
+  "Copy all": [
+    "Copiar todo",
+    "Tout copier"
+  ],
+  "Metadata copied.": [
+    "Metadatos copiados.",
+    "Métadonnées copiées."
+  ],
+  "AI generation · parameters": [
+    "Generación con IA · parámetros",
+    "Génération IA · paramètres"
+  ],
+  "AI generation · prompt": [
+    "Generación con IA · prompt",
+    "Génération IA · prompt"
+  ],
+  "AI generation · workflow": [
+    "Generación con IA · flujo de trabajo",
+    "Génération IA · workflow"
+  ],
+  "Export WebP": [
+    "Exportar WebP",
+    "Exporter en WebP"
+  ],
+  "Save in original format…": [
+    "Guardar en el formato original",
+    "Enregistrer au format d’origine"
+  ],
+  "Save in original format": [
+    "Guardar en el formato original",
+    "Enregistrer au format d’origine"
+  ],
+  "Image information…": [
+    "Información de la imagen",
+    "Informations sur l’image"
+  ],
+  "Image information": [
+    "Información de la imagen",
+    "Informations sur l’image"
+  ],
+  "Replace the current file with your changes?": [
+    "¿Reemplazar el archivo actual con los cambios?",
+    "Remplacer le fichier actuel par vos modifications ?"
+  ],
+  "The actual format will be retained. Lossy formats will be recompressed and metadata will be removed.": [
+    "Se conservará el formato real. Los formatos con pérdidas se recomprimirán y se eliminarán los metadatos.",
+    "Le format réel sera conservé. Les formats avec perte seront recompressés et les métadonnées supprimées."
+  ],
+  "Save": [
+    "Guardar",
+    "Enregistrer"
+  ],
+  "Image saved.": [
+    "Imagen guardada.",
+    "Image enregistrée."
+  ],
+  "Checkerboard background for transparency": [
+    "Fondo de cuadros para la transparencia",
+    "Damier pour la transparence"
+  ],
+  "Dimensions": [
+    "Dimensiones",
+    "Dimensions"
+  ],
+  "Transparency": [
+    "Transparencia",
+    "Transparence"
+  ],
+  "File": [
+    "Archivo",
+    "Fichier"
+  ],
+  "Size": [
+    "Tamaño",
+    "Taille"
+  ],
+  "Actual format": [
+    "Formato real",
+    "Format réel"
+  ],
+  "Source": [
+    "Origen",
+    "Source"
+  ],
+  "In-memory document": [
+    "Documento en memoria",
+    "Document en mémoire"
+  ],
+  "Yes": [
+    "Sí",
+    "Oui"
+  ],
+  "No": [
+    "No",
+    "Non"
+  ],
+  "Show artwork title (T, fullscreen only)": [
+    "Mostrar título (T, solo en pantalla completa)",
+    "Afficher le titre (T, plein écran uniquement)"
+  ],
+  "Hide mouse cursor in fullscreen (F11)": [
+    "Ocultar cursor en pantalla completa (F11)",
+    "Masquer le curseur en plein écran (F11)"
+  ],
+  "Slideshow interval": [
+    "Intervalo de la presentación",
+    "Intervalle du diaporama"
+  ],
+  "Zoom mode (1–7)": [
+    "Modo de zoom (1–7)",
+    "Mode de zoom (1–7)"
+  ],
+  "Fullscreen / Slideshow": [
+    "Pantalla completa / Presentación",
+    "Plein écran / Diaporama"
+  ],
+  "Export": [
+    "Exportar",
+    "Exporter"
+  ],
+  "Screen color": [
+    "Color del fondo",
+    "Couleur du fond"
+  ],
+  "Choose…": [
+    "Elegir",
+    "Choisir"
+  ],
+  "Text size": [
+    "Tamaño del texto",
+    "Taille du texte"
+  ],
+  "Text position": [
+    "Posición del texto",
+    "Position du texte"
+  ],
+  "Text alignment": [
+    "Alineación del texto",
+    "Alignement du texte"
+  ],
+  "Top": [
+    "Arriba",
+    "En haut"
+  ],
+  "Middle": [
+    "Medio",
+    "Au milieu"
+  ],
+  "Bottom": [
+    "Abajo",
+    "En bas"
+  ],
+  "Left": [
+    "Izquierda",
+    "À gauche"
+  ],
+  "Center": [
+    "Centro",
+    "Au centre"
+  ],
+  "Right": [
+    "Derecha",
+    "À droite"
+  ],
+  "Show artwork title (fullscreen only)": [
+    "Mostrar título (solo en pantalla completa)",
+    "Afficher le titre (plein écran uniquement)"
+  ],
+  "Hide mouse cursor in fullscreen": [
+    "Ocultar cursor en pantalla completa",
+    "Masquer le curseur en plein écran"
+  ],
+  "Select entire image": [
+    "Seleccionar toda la imagen",
+    "Sélectionner toute l’image"
+  ],
+  "About": [
+    "Acerca de",
+    "À propos"
+  ],
+  "About LumeView": [
+    "Acerca de LumeView",
+    "À propos de LumeView"
+  ],
+  "A simple, fast image viewer.": [
+    "Un visor de imágenes sencillo y rápido.",
+    "Une visionneuse d’images simple et rapide."
+  ],
+  "This kitten is called Lume.": [
+    "Este gatito se llama Lume.",
+    "Ce petit chat s’appelle Lume."
+  ],
+  "There is no image on the clipboard.": [
+    "No hay ninguna imagen en el portapapeles.",
+    "Le presse-papiers ne contient aucune image."
+  ],
+  "Could not access the clipboard.": [
+    "No se pudo acceder al portapapeles.",
+    "Impossible d’accéder au presse-papiers."
+  ],
+  "Created by flavw · CC0 1.0": [
+    "Creado por flavw · CC0 1.0",
+    "Créé par flavw · CC0 1.0"
+  ],
+  "Open source software · CC0 1.0": [
+    "Software de código abierto · CC0 1.0",
+    "Logiciel libre · CC0 1.0"
+  ],
+  "Fullscreen title color": [
+    "Color del título en pantalla completa",
+    "Couleur du titre en plein écran"
+  ],
+  "Show / hide artwork filename (fullscreen)": [
+    "Mostrar / ocultar nombre del archivo (pantalla completa)",
+    "Afficher / masquer le nom du fichier (plein écran)"
+  ],
+  "Original size": [
+    "Tamaño original",
+    "Taille d’origine"
+  ],
+  "Select / deselect all": [
+    "Seleccionar / deseleccionar todo",
+    "Tout sélectionner / désélectionner"
+  ],
+  "Previous / next image; with a selection, move it": [
+    "Imagen anterior / siguiente; con selección, moverla",
+    "Image précédente / suivante ; déplacer la sélection si elle existe"
+  ],
+  "Pan vertically; with a selection, move it": [
+    "Desplazar verticalmente; con selección, moverla",
+    "Déplacer verticalement l’image ou la sélection"
+  ],
+  "Next / previous": [
+    "Siguiente / anterior",
+    "Suivante / précédente"
+  ],
+  "Jump 5 images": [
+    "Saltar 5 imágenes",
+    "Sauter 5 images"
+  ],
+  "Advance N images (0 = 10); Shift reverses": [
+    "Avanzar N imágenes (0 = 10); Shift invierte",
+    "Avancer de N images (0 = 10) ; Maj inverse le sens"
+  ],
+  "First / last image": [
+    "Primera / última imagen",
+    "Première / dernière image"
+  ],
+  "Zoom in / out": [
+    "Ampliar / reducir",
+    "Zoom avant / arrière"
+  ],
+  "Fit modes listed in the View menu": [
+    "Modos de ajuste del menú Ver",
+    "Modes d’affichage du menu Affichage"
+  ],
+  "Cancel selection, exit fullscreen or close": [
+    "Cancelar selección, salir de pantalla completa o cerrar",
+    "Annuler la sélection, quitter le plein écran ou fermer"
+  ],
+  "Rename, including extension": [
+    "Renombrar, incluida la extensión",
+    "Renommer, y compris l’extension"
+  ],
+  "Move / copy file": [
+    "Mover / copiar archivo",
+    "Déplacer / copier le fichier"
+  ],
+  "Recycle bin / permanent deletion, with confirmation": [
+    "Papelera / eliminación permanente, con confirmación",
+    "Corbeille / suppression définitive, avec confirmation"
+  ],
+  "Hide / show cursor in fullscreen": [
+    "Ocultar / mostrar cursor en pantalla completa",
+    "Masquer / afficher le curseur en plein écran"
+  ],
+  "Export JPEG / WebP": [
+    "Exportar JPEG / WebP",
+    "Exporter en JPEG / WebP"
+  ],
+  "Apply selection": [
+    "Aplicar recorte",
+    "Appliquer le recadrage"
+  ],
+  "Start lossless JPEG selection": [
+    "Iniciar recorte JPEG sin pérdidas",
+    "Commencer un recadrage JPEG sans perte"
+  ],
+  "Resize selection proportionally": [
+    "Cambiar tamaño de selección proporcionalmente",
+    "Redimensionner la sélection proportionnellement"
+  ],
+  "Move selection in larger steps": [
+    "Mover selección con pasos mayores",
+    "Déplacer la sélection par pas plus grands"
+  ],
+  "Change selection width / height": [
+    "Cambiar ancho / alto de selección",
+    "Modifier la largeur / hauteur de la sélection"
+  ],
+  "Undo / redo edits": [
+    "Deshacer / rehacer cambios",
+    "Annuler / rétablir les modifications"
+  ],
+  "Copy image or selection": [
+    "Copiar imagen o selección",
+    "Copier l’image ou la sélection"
+  ],
+  "Find in folder": [
+    "Buscar en la carpeta",
+    "Rechercher dans le dossier"
+  ],
+  "Open in another window": [
+    "Abrir en otra ventana",
+    "Ouvrir dans une autre fenêtre"
+  ],
+  "Start / stop slideshow": [
+    "Iniciar / detener presentación",
+    "Démarrer / arrêter le diaporama"
+  ],
+  "Pause slideshow; another key resumes": [
+    "Pausar presentación; otra tecla continúa",
+    "Suspendre le diaporama ; une autre touche le reprend"
+  ],
+  "Space / Backspace": [
+    "Espacio / Retroceso",
+    "Espace / Retour arrière"
+  ],
+  "Ctrl + navigation": [
+    "Ctrl + navegación",
+    "Ctrl + navigation"
+  ],
+  "LumeView 0.7 · Minimal image viewer in Rust": [
+    "LumeView 0.7 · Visor minimalista en Rust",
+    "LumeView 0.7 · Visionneuse minimaliste en Rust"
+  ],
+  "Edits remain in memory until exported. Navigation discards them.": [
+    "Los cambios permanecen en memoria hasta exportar. La navegación los descarta.",
+    "Les modifications restent en mémoire jusqu’à l’exportation. La navigation les abandonne."
+  ],
+  "Edits remain in memory until exported. Navigation discards them. Lossless JPEG selections save a separate _crop, _crop1, _crop2 file and preserve the original. JPEGs with EXIF orientation other than 1 require a regular selection in this version.": [
+    "Los cambios permanecen en memoria hasta exportar. Navegar los descarta. El recorte JPEG sin pérdidas guarda una copia _crop, _crop1, _crop2 y conserva el original. Los JPEG con orientación EXIF distinta de 1 requieren recorte normal.",
+    "Les modifications restent en mémoire jusqu’à l’exportation. La navigation les abandonne. Le recadrage JPEG sans perte crée une copie _crop, _crop1, _crop2 et préserve l’original. Une orientation EXIF autre que 1 nécessite un recadrage normal."
+  ],
+  "Animated and multipage images: first frame only. OCR, thumbnails, printing, screen capture, 8BF filters and IPTC editing are not available in this version.": [
+    "Imágenes animadas y multipágina: solo el primer cuadro. OCR, miniaturas, impresión, captura de pantalla, filtros 8BF y edición IPTC no están disponibles en esta versión.",
+    "Images animées et multipages : première image uniquement. OCR, miniatures, impression, capture d’écran, filtres 8BF et modification IPTC indisponibles dans cette version."
+  ],
+  "JPEG/WebP open directly. ImageMagick handles additional formats and export on demand. jpegtran saves JPEG selections without recompression.": [
+    "JPEG/WebP se abren directamente. ImageMagick procesa formatos adicionales y exportaciones bajo demanda. jpegtran recorta JPEG sin recomprimir.",
+    "JPEG/WebP s’ouvrent directement. ImageMagick traite les autres formats et les exportations à la demande. jpegtran recadre les JPEG sans recompression."
+  ],
+  "Linux: install ImageMagick 7 with AVIF/WebP support and libjpeg-turbo. LUMEVIEW_MAGICK and LUMEVIEW_JPEGTRAN specify alternative executable paths.": [
+    "Linux: instala ImageMagick 7 con soporte AVIF/WebP y libjpeg-turbo. LUMEVIEW_MAGICK y LUMEVIEW_JPEGTRAN indican rutas alternativas.",
+    "Linux : installez ImageMagick 7 avec AVIF/WebP et libjpeg-turbo. LUMEVIEW_MAGICK et LUMEVIEW_JPEGTRAN indiquent les chemins alternatifs."
+  ],
+  "Converts original files. Existing names receive a numeric suffix.": [
+    "Convierte archivos originales. Los nombres existentes reciben un sufijo numérico.",
+    "Convertit les fichiers d’origine. Les noms existants reçoivent un suffixe numérique."
+  ],
+  "Permanently delete this file?": [
+    "¿Eliminar permanentemente este archivo?",
+    "Supprimer définitivement ce fichier ?"
+  ],
+  "Move this file to the recycle bin?": [
+    "¿Enviar este archivo a la papelera?",
+    "Mettre ce fichier à la corbeille ?"
+  ],
+  "File not found.": [
+    "Archivo no encontrado.",
+    "Fichier introuvable."
+  ],
+  "Image copied.": [
+    "Imagen copiada.",
+    "Image copiée."
+  ],
+  "Export completed.": [
+    "Exportación completada.",
+    "Exportation terminée."
+  ],
+  "Batch completed.": [
+    "Lote completado.",
+    "Traitement par lots terminé."
+  ],
+  "Batch canceled. Completed files were kept.": [
+    "Lote cancelado. Se conservaron los archivos completados.",
+    "Traitement annulé. Les fichiers terminés ont été conservés."
+  ],
+  "Selection: Ctrl+Y applies in memory; Esc cancels.": [
+    "Recorte: Ctrl+Y aplica en memoria; Esc cancela.",
+    "Recadrage : Ctrl+Y applique en mémoire ; Échap annule."
+  ],
+  "Lossless JPEG selection: Ctrl+Y saves a copy in the same folder; Esc cancels.": [
+    "Recorte JPEG sin pérdidas: Ctrl+Y guarda una copia en la misma carpeta; Esc cancela.",
+    "Recadrage JPEG sans perte : Ctrl+Y enregistre une copie dans le même dossier ; Échap annule."
+  ],
+  "Lossless JPEG selections require normal EXIF orientation (1). Use a regular selection.": [
+    "El recorte JPEG sin pérdidas requiere orientación EXIF normal (1). Usa el recorte normal.",
+    "Le recadrage JPEG sans perte nécessite une orientation EXIF normale (1). Utilisez le recadrage normal."
+  ],
+  "Lossless JPEG selections require the unedited original. Reload with F5.": [
+    "El recorte JPEG sin pérdidas requiere el original sin editar. Recarga con F5.",
+    "Le recadrage JPEG sans perte nécessite l’original non modifié. Rechargez avec F5."
+  ],
+  "Lossless selections are available only for JPEG files.": [
+    "El recorte sin pérdidas solo está disponible para JPEG.",
+    "Le recadrage sans perte est disponible uniquement pour les JPEG."
+  ],
+  "Limit in this version: 100 megapixels.": [
+    "Límite de esta versión: 100 megapíxeles.",
+    "Limite de cette version : 100 mégapixels."
+  ],
+  "File renamed. Its content and format were not converted.": [
+    "Archivo renombrado. Su contenido y formato no se convirtieron.",
+    "Fichier renommé. Son contenu et son format n’ont pas été convertis."
+  ],
+  "A file with this name already exists. No file was replaced.": [
+    "Ya existe un archivo con este nombre. Ningún archivo fue reemplazado.",
+    "Un fichier porte déjà ce nom. Aucun fichier n’a été remplacé."
+  ],
+  "The destination already exists. No file was replaced.": [
+    "El destino ya existe. Ningún archivo fue reemplazado.",
+    "La destination existe déjà. Aucun fichier n’a été remplacé."
+  ],
+  "Copy to folder": [
+    "Copiar a carpeta",
+    "Copier vers un dossier"
+  ],
+  "Move to folder": [
+    "Mover a carpeta",
+    "Déplacer vers un dossier"
+  ],
+  "images selected": [
+    "imágenes seleccionadas",
+    "images sélectionnées"
+  ],
+  "aspect ratio": [
+    "proporción",
+    "rapport largeur/hauteur"
+  ],
+  "Cancel after the current image": [
+    "Cancelar después de la imagen actual",
+    "Annuler après l’image actuelle"
+  ],
+  "Português": [
+    "Português",
+    "Português"
+  ],
+  "English": [
+    "English",
+    "English"
+  ],
+  "1  Original size (1:1)": [
+    "1  Tamaño original (1:1)",
+    "1  Taille d’origine (1:1)"
+  ],
+  "3  Fit all images to window": [
+    "3  Ajustar todas a la ventana",
+    "3  Adapter toutes les images à la fenêtre"
+  ],
+  "4  Stretch to window": [
+    "4  Estirar a la ventana",
+    "4  Étirer à la fenêtre"
+  ],
+  "5  Fit width": [
+    "5  Ajustar ancho",
+    "5  Adapter à la largeur"
+  ],
+  "6  Fit height": [
+    "6  Ajustar alto",
+    "6  Adapter à la hauteur"
+  ],
+  "7  Fit shorter side": [
+    "7  Ajustar lado menor",
+    "7  Adapter au côté le plus court"
+  ],
+  "Lossless JPEG selection": [
+    "Recorte JPEG sin pérdidas",
+    "Recadrage JPEG sans perte"
+  ],
+  "Cancel selection": [
+    "Cancelar selección",
+    "Annuler la sélection"
+  ],
+  "Invert aspect ratio": [
+    "Invertir proporción",
+    "Inverser le rapport"
+  ],
+  "Reload image and folder": [
+    "Recargar imagen y carpeta",
+    "Recharger l’image et le dossier"
+  ],
+  "Random image": [
+    "Imagen aleatoria",
+    "Image aléatoire"
+  ],
+  "Start slideshow": [
+    "Iniciar presentación",
+    "Démarrer le diaporama"
+  ],
+  "Stop slideshow": [
+    "Detener presentación",
+    "Arrêter le diaporama"
+  ],
+  "Exit fullscreen": [
+    "Salir de pantalla completa",
+    "Quitter le plein écran"
+  ],
+  "Fullscreen / window": [
+    "Pantalla completa / ventana",
+    "Plein écran / fenêtre"
+  ],
+  "Previous image": [
+    "Imagen anterior",
+    "Image précédente"
+  ],
+  "Next image": [
+    "Imagen siguiente",
+    "Image suivante"
+  ],
+  "Zoom mode": [
+    "Modo de zoom",
+    "Mode de zoom"
+  ],
+  "Close app": [
+    "Cerrar aplicación",
+    "Fermer l’application"
+  ],
+  "Flip horizontally": [
+    "Voltear horizontalmente",
+    "Retourner horizontalement"
+  ],
+  "Flip vertically": [
+    "Voltear verticalmente",
+    "Retourner verticalement"
+  ],
+  "Rotate 90° clockwise": [
+    "Girar 90° a la derecha",
+    "Pivoter de 90° vers la droite"
+  ],
+  "Rotate 90° counterclockwise": [
+    "Girar 90° a la izquierda",
+    "Pivoter de 90° vers la gauche"
+  ],
+  "Grayscale": [
+    "Escala de grises",
+    "Niveaux de gris"
+  ],
+  "Resize": [
+    "Cambiar tamaño",
+    "Redimensionner"
+  ],
+  "Copy image / selection": [
+    "Copiar imagen / selección",
+    "Copier l’image / la sélection"
+  ],
+  "Paste as new image": [
+    "Pegar como nueva imagen",
+    "Coller comme nouvelle image"
+  ],
+  "Qlt": [
+    "Cal.",
+    "Qual."
+  ],
+  "lossless": [
+    "sin pérdidas",
+    "sans perte"
+  ],
+  "Batch conversion": [
+    "Conversión por lotes",
+    "Conversion par lots"
+  ],
+  "Move file": [
+    "Mover archivo",
+    "Déplacer le fichier"
+  ],
+  "Copy file": [
+    "Copiar archivo",
+    "Copier le fichier"
+  ],
+  "Move to recycle bin": [
+    "Enviar a la papelera",
+    "Mettre à la corbeille"
+  ],
+  "Delete permanently": [
+    "Eliminar permanentemente",
+    "Supprimer définitivement"
+  ],
+  "Open image": [
+    "Abrir imagen",
+    "Ouvrir une image"
+  ],
+  "Rename": [
+    "Renombrar",
+    "Renommer"
+  ],
+  "Open": [
+    "Abrir",
+    "Ouvrir"
+  ],
+  "Undo": [
+    "Deshacer",
+    "Annuler"
+  ],
+  "Redo": [
+    "Rehacer",
+    "Rétablir"
+  ],
+  "Lossless JPEG rotation": [
+    "Rotación JPEG sin pérdidas",
+    "Rotation JPEG sans perte"
+  ],
+  "Rotate 180°": [
+    "Girar 180°",
+    "Pivoter de 180°"
+  ],
+  "JPEG crop": [
+    "Recorte JPEG",
+    "Recadrage JPEG"
+  ],
+  "Menu transparency": [
+    "Transparencia de los menús",
+    "Transparence des menus"
+  ],
+  "Unsaved changes": [
+    "Cambios sin guardar",
+    "Modifications non enregistrées"
+  ],
+  "This image has unsaved changes. Discard them?": [
+    "Esta imagen tiene cambios sin guardar. ¿Descartarlos?",
+    "Cette image contient des modifications non enregistrées. Les abandonner ?"
+  ],
+  "Discard changes": [
+    "Descartar cambios",
+    "Abandonner les modifications"
+  ],
+  "New name:": [
+    "Nuevo nombre:",
+    "Nouveau nom :"
+  ],
+  "Extension:": [
+    "Extensión:",
+    "Extension :"
+  ],
+  "Neon + black": [
+    "Neón + negro",
+    "Néon + noir"
+  ],
+  "Custom aspect ratio": [
+    "Proporción personalizada",
+    "Rapport personnalisé"
+  ],
+  "Width : height ratio": [
+    "Proporción ancho : alto",
+    "Rapport largeur : hauteur"
+  ],
+  "Swap": [
+    "Invertir",
+    "Inverser"
+  ],
+  "Neon color": [
+    "Color neón",
+    "Couleur néon"
+  ],
+  "Print": [
+    "Imprimir",
+    "Imprimer"
+  ],
+  "Select area": [
+    "Recortar",
+    "Recadrer"
+  ],
+  "Lossless crop": [
+    "Recorte sin pérdidas",
+    "Recadrage sans perte"
+  ],
+  "Copy": [
+    "Copiar",
+    "Copier"
+  ],
+  "Paste": [
+    "Pegar",
+    "Coller"
+  ],
+  "Edit": [
+    "Editar",
+    "Édition"
+  ],
+  "Image": [
+    "Imagen",
+    "Image"
+  ],
+  "Options": [
+    "Opciones",
+    "Options"
+  ],
+  "View": [
+    "Ver",
+    "Affichage"
+  ],
+  "Help": [
+    "Ayuda",
+    "Aide"
+  ],
+  "Preferences": [
+    "Preferencias",
+    "Préférences"
+  ],
+  "Appearance": [
+    "Apariencia",
+    "Apparence"
+  ],
+  "Theme": [
+    "Tema",
+    "Thème"
+  ],
+  "Language": [
+    "Idioma",
+    "Langue"
+  ],
+  "Dark": [
+    "Oscuro",
+    "Sombre"
+  ],
+  "Light": [
+    "Claro",
+    "Clair"
+  ],
+  "System": [
+    "Sistema",
+    "Système"
+  ],
+  "Export quality": [
+    "Calidad de exportación",
+    "Qualité d’exportation"
+  ],
+  "Viewing": [
+    "Visualización",
+    "Affichage"
+  ],
+  "Slideshow": [
+    "Presentación",
+    "Diaporama"
+  ],
+  "Time between images": [
+    "Intervalo entre imágenes",
+    "Intervalle entre les images"
+  ],
+  "seconds": [
+    "segundos",
+    "secondes"
+  ],
+  "Startup mode": [
+    "Modo inicial",
+    "Mode initial"
+  ],
+  "Dependencies": [
+    "Dependencias",
+    "Dépendances"
+  ],
+  "Close / cancel": [
+    "Cerrar / cancelar",
+    "Fermer / annuler"
+  ],
+  "Width": [
+    "Ancho",
+    "Largeur"
+  ],
+  "Height": [
+    "Alto",
+    "Hauteur"
+  ],
+  "Keep aspect ratio": [
+    "Mantener proporción",
+    "Conserver les proportions"
+  ],
+  "Apply": [
+    "Aplicar",
+    "Appliquer"
+  ],
+  "Replace": [
+    "Reemplazar",
+    "Remplacer"
+  ],
+  "Notice": [
+    "Aviso",
+    "Avis"
+  ],
+  "Select images": [
+    "Seleccionar imágenes",
+    "Sélectionner des images"
+  ],
+  "Choose output folder": [
+    "Elegir carpeta de salida",
+    "Choisir le dossier de destination"
+  ],
+  "Quality": [
+    "Calidad",
+    "Qualité"
+  ],
+  "Destination": [
+    "Destino",
+    "Destination"
+  ],
+  "Convert": [
+    "Convertir",
+    "Convertir"
+  ],
+  "Part of filename": [
+    "Parte del nombre del archivo",
+    "Partie du nom du fichier"
+  ],
+  "Free": [
+    "Libre",
+    "Libre"
+  ],
+  "Resume": [
+    "Continuar",
+    "Reprendre"
+  ],
+  "Pause": [
+    "Pausar",
+    "Suspendre"
+  ],
+  "Exit": [
+    "Salir",
+    "Quitter"
+  ],
+  "Zoom in": [
+    "Ampliar",
+    "Zoom avant"
+  ],
+  "Zoom out": [
+    "Reducir",
+    "Zoom arrière"
+  ],
+  "Processing": [
+    "Procesando",
+    "Traitement"
+  ],
+  "Converting": [
+    "Convirtiendo",
+    "Conversion"
+  ],
+  "Manual zoom": [
+    "Zoom manual",
+    "Zoom manuel"
+  ],
+  "Selection saved": [
+    "Recorte guardado",
+    "Recadrage enregistré"
+  ],
+  "Untitled image": [
+    "Imagen sin título",
+    "Image sans titre"
+  ],
+  "Choose": [
+    "Elegir",
+    "Choisir"
+  ],
+  "2  Fit large images only": [
+    "2  Ajustar solo imágenes grandes",
+    "2  Adapter uniquement les grandes images"
+  ],
+  "Preferences are saved when the app closes.": [
+    "Las preferencias se guardan al cerrar la aplicación.",
+    "Les préférences sont enregistrées à la fermeture de l’application."
+  ],
+  "Full filename, including extension:": [
+    "Nombre completo, incluida la extensión:",
+    "Nom complet, y compris l’extension :"
+  ],
+  "Changing the extension does not convert the image format.": [
+    "Cambiar la extensión no convierte el formato de la imagen.",
+    "Modifier l’extension ne convertit pas le format de l’image."
+  ],
+  "Select area (last aspect ratio)": [
+    "Recortar (última proporción)",
+    "Recadrer (dernier rapport)"
+  ],
+  "JPEG and WebP • default quality": [
+    "JPEG y WebP • calidad predeterminada",
+    "JPEG et WebP • qualité par défaut"
+  ],
+  "Use images from current folder": [
+    "Usar imágenes de la carpeta actual",
+    "Utiliser les images du dossier actuel"
+  ],
+  "Open an image or paste from the clipboard.": [
+    "Abre una imagen o pégala desde el portapapeles.",
+    "Ouvrez une image ou collez-la depuis le presse-papiers."
+  ],
+  "Drop a file here • Ctrl+O open • Ctrl+V paste": [
+    "Arrastra un archivo aquí • Ctrl+O abrir • Ctrl+V pegar",
+    "Déposez un fichier ici • Ctrl+O ouvrir • Ctrl+V coller"
+  ],
+  "Left double-click": [
+    "Doble clic izquierdo",
+    "Double clic gauche"
+  ],
+  "Could not open the CBZ. The file is corrupted or is not a valid ZIP archive.": [
+    "No se pudo abrir el CBZ. El archivo está dañado o no es un ZIP válido.",
+    "Impossible d’ouvrir le CBZ. Le fichier est endommagé ou n’est pas une archive ZIP valide."
+  ],
+  "Could not read the CBZ pages. The file may be corrupted or password-protected.": [
+    "No se pudieron leer las páginas del CBZ. El archivo puede estar dañado o protegido con contraseña.",
+    "Impossible de lire les pages du CBZ. Le fichier peut être endommagé ou protégé par un mot de passe."
+  ],
+  "The comic contains no supported images.": [
+    "El cómic no contiene imágenes compatibles.",
+    "La bande dessinée ne contient aucune image compatible."
+  ],
+  "The comic file has changed on disk. Press F5 to reopen it.": [
+    "El archivo del cómic ha cambiado. Pulsa F5 para volver a abrirlo.",
+    "Le fichier de la bande dessinée a changé. Appuyez sur F5 pour le rouvrir."
+  ],
+  "The page is too large.": [
+    "La página es demasiado grande.",
+    "La page est trop grande."
+  ],
+  "Page integrity check failed (CRC). The ZIP/CBZ archive probably contains an error or corrupted data. Test the archive with 7-Zip or obtain a new copy.": [
+    "Falló la verificación de integridad de la página (CRC). Probablemente hay un error o datos dañados en el archivo ZIP/CBZ. Comprueba el archivo con 7-Zip u obtén una nueva copia.",
+    "La vérification d’intégrité de la page a échoué (CRC). L’archive ZIP/CBZ contient probablement une erreur ou des données corrompues. Testez l’archive avec 7-Zip ou obtenez une nouvelle copie."
+  ]
+}

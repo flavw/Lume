@@ -1,8 +1,9 @@
 ﻿param([Parameter(Mandatory=$true)][string]$Payload,[string]$Target=(Join-Path $env:LOCALAPPDATA 'Programs\LumeView'),[switch]$StageOnly)
 $ErrorActionPreference='Stop'
+try {
 $Target=[IO.Path]::GetFullPath($Target)
 $exe=Join-Path $Target 'lumeview.exe'
-if(Get-Process lumeview -ErrorAction SilentlyContinue | Where-Object {$_.Path -eq $exe}){throw 'Feche o LumeView antes de instalar ou atualizar.'}
+if(Get-Process lumeview -ErrorAction SilentlyContinue | Where-Object {$_.Path -eq $exe}){[Console]::Error.WriteLine('Close LumeView before installing or updating.');exit 1001}
 New-Item -ItemType Directory -Force -Path $Target | Out-Null
 Expand-Archive -LiteralPath $Payload -DestinationPath $Target -Force
 $toolsRoot=[IO.Path]::GetFullPath((Join-Path $Target 'tools'))
@@ -18,7 +19,7 @@ $prog='HKCU:\Software\Classes\LumeView.Image'
 New-Item -Force -Path $prog | Out-Null
 Set-Item -LiteralPath $prog -Value 'Imagem ou quadrinho do LumeView'
 New-Item -Force -Path "$prog\DefaultIcon" | Out-Null
-Set-Item -LiteralPath "$prog\DefaultIcon" -Value ('"'+$exe+'",0')
+Set-Item -LiteralPath "$prog\DefaultIcon" -Value ('"'+(Join-Path $Target 'assets\lumeview-image.ico')+'",0')
 New-Item -Force -Path "$prog\shell\open\command" | Out-Null
 Set-Item -LiteralPath "$prog\shell\open\command" -Value ('"'+$exe+'" "%1"')
 $comic='HKCU:\Software\Classes\LumeView.CBZ'
@@ -60,10 +61,21 @@ $link=$shell.CreateShortcut($start);$link.TargetPath=$exe;$link.WorkingDirectory
 $uninstall='HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\LumeView'
 New-Item -Force -Path $uninstall | Out-Null
 Set-ItemProperty -LiteralPath $uninstall -Name DisplayName -Value 'LumeView'
-Set-ItemProperty -LiteralPath $uninstall -Name DisplayVersion -Value '0.27.0'
+Set-ItemProperty -LiteralPath $uninstall -Name DisplayVersion -Value '0.31.0'
 Set-ItemProperty -LiteralPath $uninstall -Name DisplayIcon -Value $exe
 Set-ItemProperty -LiteralPath $uninstall -Name InstallLocation -Value $Target
 Set-ItemProperty -LiteralPath $uninstall -Name UninstallString -Value ('powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "'+(Join-Path $Target 'installer\uninstall.ps1')+'"')
 Set-ItemProperty -LiteralPath $uninstall -Name NoModify -Type DWord -Value 1
 Set-ItemProperty -LiteralPath $uninstall -Name NoRepair -Type DWord -Value 1
 Write-Output 'LumeView instalado. Para defini-lo como padrão, abra Configurações > Aplicativos > Aplicativos padrão e procure LumeView.'
+
+exit 0
+} catch {
+ [Console]::Error.WriteLine($_.Exception.Message)
+ $exception=$_.Exception
+ while($exception){
+  if(($exception.HResult -band 0xffff) -in @(112,39)){exit 112}
+  $exception=$exception.InnerException
+ }
+ exit 1603
+}

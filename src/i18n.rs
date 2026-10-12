@@ -5,23 +5,53 @@ pub enum Language {
     #[default]
     Portuguese,
     English,
+    Spanish,
+    French,
 }
 
-thread_local! { static ENGLISH: Cell<bool> = const { Cell::new(false) }; }
+thread_local! { static LANGUAGE: Cell<Language> = const { Cell::new(Language::Portuguese) }; }
 pub fn set_language(language: Language) {
-    ENGLISH.set(language == Language::English);
+    LANGUAGE.set(language);
 }
 
 pub fn t(text: &str) -> String {
     let text = text.trim_end_matches("...").trim_end_matches('…');
-    if !ENGLISH.get() {
-        return text.to_owned();
+    let language = LANGUAGE.get();
+    if language == Language::Portuguese { return text.to_owned(); }
+    let value = english(text);
+    if language == Language::English { return value; }
+    static TRANSLATIONS: std::sync::OnceLock<std::collections::HashMap<String, [String; 2]>> = std::sync::OnceLock::new();
+    let translations = TRANSLATIONS.get_or_init(|| serde_json::from_str(include_str!("translations.json")).expect("Valid translations"));
+    let index = if language == Language::Spanish { 0 } else { 1 };
+    let translate = |key: &str| translations.get(key).map(|v| v[index].as_str());
+    if let Some(translated) = translate(&value) { return translated.to_owned(); }
+    if let Some(rest) = value.strip_prefix("Export ") {
+        return format!("{} {}", translate("Export").unwrap(), rest.replace("Qlt", translate("Qlt").unwrap()).replace("lossless", translate("lossless").unwrap()));
     }
+    if let Some(rest) = value.strip_prefix("Selection saved: ") {
+        return format!("{}: {rest}", translate("Selection saved").unwrap());
+    }
+    if let Some(rest) = value.strip_prefix("Manual zoom") {
+        return format!("{}{rest}", translate("Manual zoom").unwrap());
+    }
+    value.replace(" · lossless JPEG · aspect ratio ", if language == Language::Spanish { " · JPEG sin pérdidas · proporción " } else { " · JPEG sans perte · rapport " })
+}
+
+fn english(text: &str) -> String {
+    let text = text.trim_end_matches("...").trim_end_matches('…');
     let pairs = [
+        ("Falha na verificação de integridade da página (CRC). Provavelmente há um erro ou corrupção no arquivo ZIP/CBZ. Teste o arquivo com o 7-Zip ou obtenha uma nova cópia.", "Page integrity check failed (CRC). The ZIP/CBZ archive probably contains an error or corrupted data. Test the archive with 7-Zip or obtain a new copy."),
+        ("Não foi possível abrir o CBZ. O arquivo está corrompido ou não é um arquivo ZIP válido.", "Could not open the CBZ. The file is corrupted or is not a valid ZIP archive."),
+        ("Não foi possível ler as páginas do CBZ. O arquivo pode estar corrompido ou protegido por senha.", "Could not read the CBZ pages. The file may be corrupted or password-protected."),
+        ("O quadrinho não contém imagens compatíveis.", "The comic contains no supported images."),
+        ("O quadrinho mudou no disco. Use F5 para reabrir.", "The comic file has changed on disk. Press F5 to reopen it."),
+        ("Página grande demais.", "The page is too large."),
+
         ("Formato", "Format"),
         ("Salvar imagem", "Save image"),
         ("PNG preserva a imagem sem perdas; não usa qualidade percentual.", "PNG preserves the image losslessly; percentage quality does not apply."),
 
+        ("Duplo clique esquerdo", "Left double-click"),
         ("Atalhos", "Shortcuts"),
         ("Fim da pasta", "End of folder"),
         ("Você chegou à última imagem desta pasta.", "You have reached the last image in this folder."),
@@ -76,6 +106,9 @@ pub fn t(text: &str) -> String {
         ("Sobre", "About"),
         ("Sobre o LumeView", "About LumeView"),
         ("Um visualizador de imagens simples e rápido.", "A simple, fast image viewer."),
+        ("Este gatinho se chama Lume.", "This kitten is called Lume."),
+        ("Não há uma imagem na área de transferência.", "There is no image on the clipboard."),
+        ("Não foi possível acessar a área de transferência.", "Could not access the clipboard."),
         ("Criado por flavw · CC0 1.0", "Created by flavw · CC0 1.0"),
         ("Software open source · CC0 1.0", "Open source software · CC0 1.0"),
 
@@ -322,6 +355,18 @@ mod tests {
         set_language(Language::English);
         assert_eq!(t("Exportar WebP (Qld 80%)…"), "Export WebP (Qlt 80%)");
         assert_eq!(t("5  Ajustar largura"), "5  Fit width");
+        set_language(Language::Spanish);
+        assert_eq!(t("Arquivo"), "Archivo");
+        assert_eq!(t("Exportar WebP (Qld 80%)"), "Exportar WebP (Cal. 80%)");
+        assert_eq!(t("Recorte salvo: photo_crop.jpg"), "Recorte guardado: photo_crop.jpg");
+        set_language(Language::French);
+        assert_eq!(t("Arquivo"), "Fichier");
+        assert_eq!(t("Exportar WebP (Qld 80%)"), "Exporter WebP (Qual. 80%)");
+        assert_eq!(t("Não há uma imagem na área de transferência."), "Le presse-papiers ne contient aucune image.");
+        for language in [Language::Spanish, Language::French] {
+            let saved = serde_json::to_string(&language).unwrap();
+            assert!(serde_json::from_str::<Language>(&saved).unwrap() == language);
+        }
         set_language(Language::Portuguese);
         assert_eq!(t("Arquivo"), "Arquivo");
     }
