@@ -14,6 +14,43 @@ pub fn set_language(language: Language) {
     LANGUAGE.set(language);
 }
 
+fn language_for_locale(locale: &str) -> Language {
+    match locale.split(['-', '_']).next().unwrap_or("").to_ascii_lowercase().as_str() {
+        "pt" => Language::Portuguese,
+        "es" => Language::Spanish,
+        "fr" => Language::French,
+        _ => Language::English,
+    }
+}
+
+/// Local OS setting only: no network or telemetry. Saved preferences take precedence.
+pub fn system_language() -> Language {
+    #[cfg(windows)]
+    {
+        let mut locale = [0u16; 85];
+        let length = unsafe {
+            use windows_sys::Win32::Globalization::{GetUserDefaultUILanguage, LCIDToLocaleName};
+            LCIDToLocaleName(u32::from(GetUserDefaultUILanguage()), locale.as_mut_ptr(), locale.len() as i32, 0)
+        };
+        if length > 1 { return language_for_locale(&String::from_utf16_lossy(&locale[..length as usize - 1])); }
+    }
+    Language::English
+}
+
+#[cfg(test)]
+mod locale_tests {
+    use super::*;
+    #[test]
+    fn regional_languages_and_fallback() {
+        assert!(language_for_locale("pt-BR") == Language::Portuguese);
+        assert!(language_for_locale("pt-PT") == Language::Portuguese);
+        assert!(language_for_locale("es-MX") == Language::Spanish);
+        assert!(language_for_locale("fr-CA") == Language::French);
+        assert!(language_for_locale("en-US") == Language::English);
+        assert!(language_for_locale("ja-JP") == Language::English);
+    }
+}
+
 pub fn t(text: &str) -> String {
     let text = text.trim_end_matches("...").trim_end_matches('…');
     let language = LANGUAGE.get();
@@ -40,6 +77,38 @@ pub fn t(text: &str) -> String {
 fn english(text: &str) -> String {
     let text = text.trim_end_matches("...").trim_end_matches('…');
     let pairs = [
+        ("Formatos adicionais (ImageMagick)", "Additional formats (ImageMagick)"),
+        ("Não foi possível abrir o ICO. O arquivo está inválido ou corrompido.", "Could not open the ICO. The file is invalid or corrupted."),
+        ("O arquivo ICO mudou no disco. Use F5 para reabrir.", "The ICO file has changed on disk. Press F5 to reopen it."),
+        ("Rolar para baixo / cima; novo pressionamento no limite muda a imagem", "Scroll down / up; press again at the edge to change image"),
+        ("Ir para imagem", "Go to image"),
+        ("Número da imagem", "Image number"),
+        ("Ir", "Go"),
+        ("Mantém o formato original e salva cópias na pasta de saída.", "Keeps the original format and saves copies to the output folder."),
+        ("Converter imagens", "Convert images"),
+        ("Pixels", "Pixels"),
+        ("Porcentagem", "Percentage"),
+        ("50% reduz largura e altura pela metade.", "50% halves both width and height."),
+        ("Renomear em lote", "Batch rename"),
+        ("Nome base", "Base name"),
+        ("Número de dígitos", "Number of digits"),
+        ("Número inicial", "Starting number"),
+        ("A numeração será aplicada aos arquivos exportados; originais preservados.", "Numbering applies to exported files; originals are preserved."),
+        ("Sem conversão, renomeia os arquivos originais na própria pasta e mantém a extensão.", "Without conversion, renames original files in their own folder and keeps their extensions."),
+        ("Executar lote", "Run batch"),
+        ("Nome ou numeração inválidos.", "Invalid name or numbering."),
+        ("Porcentagem inválida.", "Invalid percentage."),
+        ("Pausar animação GIF", "Pause GIF animation"),
+        ("Redimensionar em lote", "Batch resize"),
+        ("Com proporção mantida, as dimensões são os limites da imagem final.", "With aspect ratio preserved, dimensions bound the output image."),
+        ("Atalhos personalizáveis", "Custom shortcuts"),
+        ("Digite a tecla ou combinação, por exemplo Alt+K ou Ctrl+Shift+R.", "Type a key or combination, such as Alt+K or Ctrl+Shift+R."),
+        ("Navegação, área de transferência, Esc e Enter mantêm os atalhos padrão.", "Navigation, clipboard, Esc and Enter keep standard shortcuts."),
+        ("Atalho inválido, reservado ou repetido. Os padrões serão usados até corrigir.", "Invalid, reserved or duplicate shortcut. Defaults apply until corrected."),
+        ("Restaurar atalhos padrão", "Restore default shortcuts"),
+        ("GIF grande demais.", "GIF exceeds the animation memory or frame limit."),
+        ("GIF sem quadros.", "GIF contains no frames."),
+        ("Imagens animadas e multipáginas: apenas o primeiro quadro. Sem OCR, miniaturas, impressão, captura de tela, filtros 8BF ou edição IPTC nesta versão.", "GIF animation is supported. Other multipage images display the first page. OCR, thumbnails, screen capture, 8BF filters and IPTC editing are not available."),
         ("Transformar", "Transform"),
         ("Adicionar imagem aberta", "Add open image"),
         ("Imagem aberta", "Open image"),

@@ -13,13 +13,19 @@ Download **LumeView-Setup.exe** from the [latest release](https://github.com/fla
 - Fast native decoding of JPEG, PNG and WebP, asynchronous loading and a bounded image cache.
 - Minimal text menus; toolbar enabled by default and optional status bar.
 - Original-size viewing, seven zoom modes, fullscreen and slideshow.
+- Animated GIF playback with frame timing and loop counts; pause via View.
+- SVG/SVGZ viewing through the bundled ImageMagick renderer (rasterized for display).
+- Fullscreen menus and toolbar fade in at the top-left corner and hide after three seconds away from the controls.
+- Batch resizing by pixels or percentage, with optional aspect-ratio preservation and original-format output. Batch naming supports a base name, digit count and starting number.
+- Customizable primary shortcuts under Edit → Preferences → Shortcuts, with conflict validation and default restoration.
 - Wallpaper crops: Free, 1:1, 16:9, 9:16, 10:16, 8:16, original and custom aspect ratios; rule-of-thirds grid and resizable handles.
 - Lossless JPEG cropping and rotation through jpegtran. Numbered copies preserve the source; imperfect rotations are rejected.
 - JPEG and WebP export at quality 80 by default, configurable quality, and lossless PNG export.
 - Create horizontal or vertical panoramas with ordered images, original sizes and an optional colored gap (zero by default). The result opens as a new document for saving.
 - AI generation metadata inspection and copying, including supported Stable Diffusion parameters and ComfyUI JSON stored in PNG, JPEG and WebP metadata.
 - Image information, clipboard images, rename with separate extension field, file copying/moving and deletion confirmation.
-- CBZ comic reading, basic image adjustments, undo/redo and unsaved-change confirmation.
+- CBZ comic reading and navigation through individual ICO images; basic adjustments, undo/redo and unsaved-change confirmation.
+- Additional ImageMagick formats have a separate Open filter and are not registered as Windows file associations. PDF, EPS and PostScript are excluded.
 - Dark, light, system and customizable neon themes; English, Portuguese, Spanish and French interfaces.
 
 ## Quick controls
@@ -36,12 +42,13 @@ Download **LumeView-Setup.exe** from the [latest release](https://github.com/fla
 | F2 | Rename |
 | Ctrl+S | Save dialog |
 | Ctrl+P | Windows Print Pictures |
-| S | Export JPEG |
+| S / W / Q | Export JPEG / WebP / PNG |
+| Page Down / Page Up | Scroll down / up; press again at the boundary to change image |
 | Ctrl+Y | Apply the crop |
 | Delete / Shift+Delete | Recycle / permanently delete, with confirmation |
 | F1 | All shortcuts |
 
-Without modifiers, the mouse wheel navigates images or scrolls vertically in the width-fit reading mode. The default zoom fits large images to the window without enlarging small ones. Selected zoom modes persist between images; width-fit pages start at the top. Left-click and drag creates a freeform selection in zoom modes 2 and 3 outside fullscreen. The last image opens a restart dialog unless automatic restart is enabled.
+Without modifiers, the mouse wheel navigates images or scrolls vertically in the width-fit reading mode. The default zoom fits large images to the window without enlarging small ones. Selected zoom modes persist between images; width-fit pages start at the top. Left-click and drag creates a freeform selection in zoom modes 2 and 3 outside fullscreen. Automatic restart at the end of a folder is enabled by default; disabling it shows a restart dialog.
 
 ## Build from source
 

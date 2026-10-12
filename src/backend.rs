@@ -9,6 +9,15 @@ use std::{
 
 pub type Result<T> = std::result::Result<T, String>;
 
+pub fn batch_resize(pixels: &RgbaImage, width: u32, height: u32, proportional: bool) -> Result<RgbaImage> {
+    if width==0 || height==0 || width>30000 || height>30000 || u64::from(width)*u64::from(height)>100_000_000 {return Err("Limite desta versão: 100 megapixels.".into());}
+    let (w,h)=if proportional {
+        let ratio=(width as f64/pixels.width() as f64).min(height as f64/pixels.height() as f64);
+        (((pixels.width() as f64*ratio).round() as u32).clamp(1,width),((pixels.height() as f64*ratio).round() as u32).clamp(1,height))
+    } else {(width,height)};
+    Ok(image::imageops::resize(pixels,w,h,image::imageops::FilterType::Lanczos3))
+}
+
 pub fn tool(name: &str) -> PathBuf {
     let env_name = format!("LUMEVIEW_{}", name.to_uppercase());
     if let Some(path) = std::env::var_os(env_name) {
@@ -504,6 +513,31 @@ pub fn save_lossless_crop(path: &Path, crop: Crop) -> Result<PathBuf> {
 mod tests {
     use super::*;
     #[test]
+    fn svg_and_svgz_render_through_imagemagick() {
+        let dir=tempfile::tempdir().unwrap();
+        let path=dir.path().join("vector.svg");
+        let svg=b"<svg xmlns='http://www.w3.org/2000/svg' width='24' height='16'><rect width='24' height='16' fill='#ff0000'/></svg>";
+        std::fs::write(&path,svg).unwrap();
+        assert!(crate::model::supported(&path));
+        let loaded=load(&path).unwrap();
+        assert_eq!(loaded.pixels.dimensions(),(24,16));
+        assert_eq!(*loaded.pixels.get_pixel(10,10),image::Rgba([255,0,0,255]));
+        let compressed=dir.path().join("vector.svgz");
+        let mut gzip=flate2::write::GzEncoder::new(std::fs::File::create(&compressed).unwrap(),flate2::Compression::default());
+        gzip.write_all(svg).unwrap();gzip.finish().unwrap();
+        assert_eq!(load(&compressed).unwrap().pixels.dimensions(),(24,16));
+    }
+    #[test]
+    fn batch_resize_preserves_source_and_fits_bounds() {
+        let source=RgbaImage::from_pixel(400,200,image::Rgba([40,60,80,100]));
+        let before=source.clone();
+        assert_eq!(batch_resize(&source,100,100,true).unwrap().dimensions(),(100,50));
+        assert_eq!(batch_resize(&source,100,100,false).unwrap().dimensions(),(100,100));
+        assert_eq!(source,before);
+        assert!(batch_resize(&source,0,100,true).is_err());
+        assert!(batch_resize(&source,30000,30000,false).is_err());
+    }
+    #[test]
     fn lossless_rotation_preserves_source_and_rejects_imperfect_edges() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("page.jpg");
@@ -628,6 +662,17 @@ mod tests {
                 native / 3.0 * 1000.0,
                 old / native
             );
+        }
+    }
+    #[test]
+    #[ignore = "Manual JPEG benchmark, needs LUMEVIEW_BENCH_JPEG"]
+    fn benchmark_jpeg_open() {
+        let path = PathBuf::from(std::env::var_os("LUMEVIEW_BENCH_JPEG").expect("Set LUMEVIEW_BENCH_JPEG"));
+        for index in 0..10 {
+            let start = std::time::Instant::now();
+            let loaded = load(&path).unwrap();
+            println!("JPEG_OPEN {} {:.2} ms {}x{}",index,start.elapsed().as_secs_f64()*1000.0,loaded.pixels.width(),loaded.pixels.height());
+            std::hint::black_box(loaded);
         }
     }
     #[test]

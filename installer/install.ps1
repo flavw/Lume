@@ -14,17 +14,17 @@ if(Test-Path -LiteralPath $toolsRoot){
  }
 }
 if($StageOnly){Write-Output "Arquivos preparados em $Target";exit 0}
-$extensions=@('.jpg','.jpeg','.png','.webp','.avif','.gif','.bmp','.tif','.tiff','.ico','.heic','.cbz')
+$extensions=@('.jpg','.jpeg','.png','.webp','.avif','.gif','.bmp','.tif','.tiff','.ico','.heic','.svg','.svgz','.cbz')
 $prog='HKCU:\Software\Classes\LumeView.Image'
 New-Item -Force -Path $prog | Out-Null
-Set-Item -LiteralPath $prog -Value 'Imagem ou quadrinho do LumeView'
+Set-Item -LiteralPath $prog -Value 'Imagem do LumeView'
 New-Item -Force -Path "$prog\DefaultIcon" | Out-Null
 Set-Item -LiteralPath "$prog\DefaultIcon" -Value ('"'+(Join-Path $Target 'assets\lumeview-image.ico')+'",0')
 New-Item -Force -Path "$prog\shell\open\command" | Out-Null
 Set-Item -LiteralPath "$prog\shell\open\command" -Value ('"'+$exe+'" "%1"')
 $comic='HKCU:\Software\Classes\LumeView.CBZ'
 New-Item -Force -Path $comic,"$comic\DefaultIcon","$comic\shell\open\command" | Out-Null
-Set-Item -LiteralPath $comic -Value 'Quadrinho CBZ do LumeView'
+Set-Item -LiteralPath $comic -Value 'Quadrinho CBZ'
 Set-Item -LiteralPath "$comic\DefaultIcon" -Value ('"'+(Join-Path $Target 'assets\lumeview-cbz.ico')+'",0')
 New-Item -Force -Path 'HKCU:\Software\Classes\.cbz\DefaultIcon' | Out-Null
 Set-Item -LiteralPath 'HKCU:\Software\Classes\.cbz\DefaultIcon' -Value ('"'+(Join-Path $Target 'assets\lumeview-cbz.ico')+'",0')
@@ -61,7 +61,7 @@ $link=$shell.CreateShortcut($start);$link.TargetPath=$exe;$link.WorkingDirectory
 $uninstall='HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\LumeView'
 New-Item -Force -Path $uninstall | Out-Null
 Set-ItemProperty -LiteralPath $uninstall -Name DisplayName -Value 'LumeView'
-Set-ItemProperty -LiteralPath $uninstall -Name DisplayVersion -Value '0.32.0'
+Set-ItemProperty -LiteralPath $uninstall -Name DisplayVersion -Value '0.33.0'
 Set-ItemProperty -LiteralPath $uninstall -Name DisplayIcon -Value $exe
 Set-ItemProperty -LiteralPath $uninstall -Name InstallLocation -Value $Target
 Set-ItemProperty -LiteralPath $uninstall -Name UninstallString -Value ('powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "'+(Join-Path $Target 'installer\uninstall.ps1')+'"')

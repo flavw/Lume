@@ -1,5 +1,8 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod backend;
+mod batch;
+mod animation;
+mod keymap;
 mod comic;
 mod generation;
 mod i18n;
@@ -77,6 +80,7 @@ struct Settings {
     menu_transparency: u8,
     manual_ratio: [f32; 2],
     neon_color: [u8; 3],
+    shortcuts: std::collections::BTreeMap<String,String>,
 }
 impl Default for Settings {
     fn default() -> Self {
@@ -96,10 +100,11 @@ impl Default for Settings {
             slide_seconds: 4.0,
             show_toolbar: true,
             show_status_bar: false,
-            auto_restart: false,
+            auto_restart: true,
             menu_transparency: 0,
             manual_ratio: [2.0, 1.0],
             neon_color: [0, 255, 200],
+            shortcuts: Default::default(),
         }
     }
 }
@@ -115,6 +120,7 @@ enum PendingAction {
 }
 
 enum Dialog {
+    GoTo(String,bool),
     Panorama { files: Vec<panorama::Input>, vertical: bool, gap: String, color: [u8;3] },
     ManualRatio {
         width: String,
@@ -150,10 +156,22 @@ enum Dialog {
         dest: PathBuf,
         format: Format,
         quality: u8,
+        resize: bool,
+        width: String,
+        height: String,
+        proportional: bool,
+        percentage: bool,
+        percent: String,
+        rename: bool,
+        name: String,
+        digits: String,
+        start: String,
+        convert: bool,
     },
     Overwrite(PathBuf, Format),
 }
 enum Message {
+    Animation(u64, Result<animation::Animation,String>),
     Panorama(backend::Result<RgbaImage>),
     Book(backend::Result<Arc<comic::Book>>),
     Export(backend::Result<()>),
@@ -164,9 +182,16 @@ enum Message {
     Restore(backend::Result<(PathBuf, Loaded)>),
     BatchProgress(usize, usize),
     BatchDone(Vec<String>),
+    BatchRenamed(PathBuf,PathBuf),
 }
 
 struct App {
+    animation: Option<animation::Animation>,
+    animation_generation: u64,
+    animation_index: usize,
+    animation_loops: u32,
+    animation_deadline: Instant,
+    animation_paused: bool,
     print_snapshots: Vec<tempfile::TempPath>,
     pixel_ratio: f32,
     tiles: tiles::Renderer,
@@ -200,6 +225,9 @@ struct App {
     canvas: Rect,
     shown: Rect,
     fullscreen: bool,
+    fullscreen_chrome_last: Option<Instant>,
+    fullscreen_chrome_opacity: f32,
+    chrome_rect: Rect,
     hide_cursor: bool,
     show_art_title: bool,
     pause_down: bool,
@@ -226,12 +254,15 @@ struct App {
 
 impl App {
     fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        let settings: Settings = cc
+        let mut settings: Settings = cc
             .storage
             .and_then(|s| s.get_string("settings"))
             .and_then(|s| serde_json::from_str(&s).ok())
-            .unwrap_or_default();
+            .unwrap_or_else(|| Settings { language: i18n::system_language(), ..Settings::default() });
         i18n::set_language(settings.language);
+        if let Some(binding)=settings.shortcuts.remove("Ctrl+Shift+S") {
+            if binding!="Ctrl+Shift+S" {settings.shortcuts.entry("W".into()).or_insert(binding);}
+        }
         cc.egui_ctx.set_theme(match settings.theme {
             Theme::Dark | Theme::Neon => egui::ThemePreference::Dark,
             Theme::Light => egui::ThemePreference::Light,
@@ -239,6 +270,12 @@ impl App {
         });
         let (tx, rx) = mpsc::channel();
         let mut app = Self {
+            animation: None,
+            animation_generation: 0,
+            animation_index: 0,
+            animation_loops: 0,
+            animation_deadline: Instant::now(),
+            animation_paused: false,
             print_snapshots: Vec::new(),
             pixel_ratio: cc.egui_ctx.pixels_per_point(),
             tiles: tiles::Renderer::default(),
@@ -291,6 +328,9 @@ impl App {
                 .egui_ctx
                 .input(|i| i.viewport().fullscreen.unwrap_or(false)),
             hide_cursor: false,
+            fullscreen_chrome_last: None,
+            fullscreen_chrome_opacity: 0.0,
+            chrome_rect: Rect::NOTHING,
             show_art_title: true,
             pause_down: false,
             dialog: None,
@@ -396,6 +436,10 @@ impl App {
         self.request_load(p);
     }
     fn request_load(&mut self, p: PathBuf) {
+        if self.book.is_none() && p.extension().is_some_and(|e|e.eq_ignore_ascii_case("ico")) && p.is_file() {
+            self.open(p);
+            return;
+        }
         if self.confirm_abandon(PendingAction::Load(p.clone())) {
             if let Some(path) = &self.path {
                 self.index = self
@@ -409,6 +453,8 @@ impl App {
         if self.busy {
             return;
         }
+        self.animation = None;
+        self.animation_generation = self.animation_generation.wrapping_add(1);
         self.fit = self.wheel_fit;
         self.zoom = 1.0;
         // Keep the currently displayed page in place while the next one loads.
@@ -437,6 +483,12 @@ impl App {
         self.install_prepared(ctx, p, im);
     }
     fn install_prepared(&mut self, ctx: &egui::Context, p: PathBuf, im: Arc<loader::Prepared>) {
+        self.animation = None;
+        self.animation_generation = self.animation_generation.wrapping_add(1);
+        if self.book.is_none() && p.extension().is_some_and(|e| e.eq_ignore_ascii_case("gif")) {
+            let (tx,ctx,path,generation) = (self.tx.clone(),ctx.clone(),p.clone(),self.animation_generation);
+            std::thread::spawn(move || { let _=tx.send(Message::Animation(generation,animation::load(&path)));ctx.request_repaint(); });
+        }
         self.loading = None;
         self.tiles.clear();
         self.path = if self.book.is_none() { Some(p) } else { None };
@@ -522,6 +574,27 @@ impl App {
         }
         while let Ok(m) = self.rx.try_recv() {
             match m {
+                Message::BatchRenamed(old,new) => {
+                    for path in &mut self.files {if *path==old {*path=new.clone();}}
+                    if self.path.as_ref()==Some(&old) {self.path=Some(new.clone());}
+                    if let Some(undo)=&mut self.file_undo {if undo.path==old {undo.path=new;}}
+                    self.loader.invalidate();
+                }
+                Message::Animation(generation,result) => {
+                    if generation == self.animation_generation && self.path.is_some() {
+                        match result {
+                            Ok(animation) if animation.frames.len() > 1 => {
+                                self.animation_index=0;
+                                self.animation_loops=0;
+                                self.animation_paused=false;
+                                self.animation_deadline=Instant::now()+animation.frames[0].1;
+                                self.animation=Some(animation);
+                            }
+                            Ok(_) => {},
+                            Err(e) => self.fail(t(&e)),
+                        }
+                    }
+                }
                 Message::Saved(path, result) => {
                     self.busy = false;
                     match result {
@@ -689,9 +762,10 @@ impl App {
                 "Imagens",
                 &[
                     "jpg", "jpeg", "png", "webp", "avif", "gif", "bmp", "tif", "tiff", "heic",
-                    "ico", "cbz",
+                    "ico", "svg", "svgz", "cbz",
                 ],
             )
+            .add_filter(t("Formatos adicionais (ImageMagick)"),model::EXTRA_EXTENSIONS)
             .pick_file()
         {
             self.open(p);
@@ -788,6 +862,8 @@ impl App {
         }
     }
     fn edit(&mut self, ctx: &egui::Context, f: impl FnOnce(&RgbaImage) -> RgbaImage) {
+        self.animation=None;
+        self.animation_generation=self.animation_generation.wrapping_add(1);
         if self.busy {
             return;
         }
@@ -1182,7 +1258,7 @@ impl App {
             Err(e) => self.fail(e),
         }
     }
-    fn start_batch(&mut self, files: Vec<PathBuf>, dest: PathBuf, format: Format, quality: u8) {
+    fn start_batch(&mut self, files: Vec<PathBuf>, dest: PathBuf, format: Format, quality: u8, resize: Option<batch::Resize>, naming: Option<batch::Naming>, convert: bool) {
         if files.is_empty() {
             return;
         }
@@ -1198,20 +1274,31 @@ impl App {
                 if cancel.load(Ordering::Relaxed) {
                     break;
                 }
-                let mut target = dest
-                    .join(p.file_stem().unwrap_or_default())
-                    .with_extension(format.ext());
-                let mut count = 1;
-                while target.exists() {
-                    target = dest.join(format!(
-                        "{}-{count}.{}",
-                        p.file_stem().unwrap_or_default().to_string_lossy(),
-                        format.ext()
-                    ));
-                    count += 1;
-                }
-                let r = backend::load(p)
-                    .and_then(|im| backend::export_new(&im.pixels, &target, format, quality));
+                let r = (|| {
+                    if !convert && resize.is_none() {
+                        let naming=naming.as_ref().ok_or("Nome ou numeração inválidos.")?;
+                        let extension=p.extension().unwrap_or_default().to_string_lossy();
+                        let name=naming.filename(n,&extension)?;
+                        let new=batch::rename_file(p,&name)?;
+                        let _=tx.send(Message::BatchRenamed(p.clone(),new));
+                        return Ok(());
+                    }
+                    let source_extension=p.extension().unwrap_or_default().to_string_lossy();
+                    let extension=if convert {format.ext()}else{source_extension.as_ref()};
+                    let filename=if let Some(naming)=&naming {naming.filename(n,extension)?}
+                        else {format!("{}.{}",p.file_stem().unwrap_or_default().to_string_lossy(),extension)};
+                    let mut target=dest.join(&filename);
+                    let mut count=1;
+                    while target.exists() {
+                        if naming.is_some() {return Err("O destino já existe. Nenhum arquivo foi substituído.".into());}
+                        let stem=Path::new(&filename).file_stem().unwrap_or_default().to_string_lossy();
+                        target=dest.join(format!("{stem}-{count}.{extension}"));count+=1;
+                    }
+                    let im=backend::load(p)?;
+                    let resized=resize.map(|r|batch::resized(&im.pixels,r)).transpose()?;
+                    if convert {backend::export_new(resized.as_ref().unwrap_or(&im.pixels),&target,format,quality)}
+                    else {batch::export_resized_original(resized.as_ref().unwrap_or(&im.pixels),p,&target,quality)}
+                })();
                 if let Err(e) = r {
                     errors.push(format!("{}: {e}", p.display()));
                 }
@@ -1279,6 +1366,7 @@ impl App {
                 key,
                 pressed: true,
                 modifiers: m,
+                repeat,
                 ..
             } = e
             else {
@@ -1299,6 +1387,7 @@ impl App {
             if ctx.wants_keyboard_input() {
                 continue;
             }
+            let Some((key,m))=keymap::remap(key,m,&self.settings.shortcuts) else {continue;};
             if self.slide && self.paused {
                 self.paused = false;
                 self.last_slide = Instant::now();
@@ -1480,6 +1569,8 @@ impl App {
                     Key::P => self.dialog = Some(Dialog::Settings),
                     Key::I => self.show_information(),
                     Key::S => self.export_dialog(Format::Jpeg),
+                    Key::W => self.export_dialog(Format::Webp),
+                    Key::Q => self.export_dialog(Format::Png),
                     Key::Delete => {
                         if self.path.is_some() {
                             self.dialog = Some(Dialog::Delete {
@@ -1493,8 +1584,10 @@ impl App {
                     Key::ArrowLeft | Key::ArrowRight | Key::ArrowUp | Key::ArrowDown => {
                         self.arrow(key, m)
                     }
-                    Key::Space | Key::PageDown => self.navigate(1),
-                    Key::Backspace | Key::PageUp => self.navigate(-1),
+                    Key::Space => self.navigate(1),
+                    Key::Backspace => self.navigate(-1),
+                    Key::PageDown => self.page_scroll(1,m,repeat),
+                    Key::PageUp => self.page_scroll(-1,m,repeat),
                     Key::Home => {
                         if self.fit == Fit::Custom || self.fit == Fit::Original {
                             self.pan.x = 0.0;
@@ -1561,6 +1654,19 @@ impl App {
             self.pan.y -= dy as f32 * 40.0;
         }
     }
+    fn page_scroll(&mut self, direction: i32, modifiers: egui::Modifiers, repeat: bool) {
+        if self.selection.is_some() {
+            self.arrow(if direction>0 {Key::ArrowDown}else{Key::ArrowUp},modifiers);
+            return;
+        }
+        if self.loading.is_some() {if !repeat {self.navigate(direction as isize);} return;}
+        let (w,h)=self.dimensions();
+        let (_,sy)=model::display_scale(self.fit,(w,h),(self.canvas.width(),self.canvas.height()),self.zoom,self.pixel_ratio);
+        let limit=((h as f32*sy-self.canvas.height())/2.0).max(0.0);
+        let (pan,next)=model::page_step(self.pan.y,limit,direction,repeat);
+        self.pan.y=pan;
+        if next {self.navigate(direction as isize);}
+    }
 
     fn menus(&mut self, ctx: &egui::Context) {
         let menu = egui::Area::new(egui::Id::new("menu"))
@@ -1568,6 +1674,7 @@ impl App {
             .fixed_pos(Pos2::ZERO)
             .show(ctx, |ui| {
                 let font = egui::TextStyle::Button.resolve(ui.style());
+                if self.fullscreen {ui.set_opacity(self.fullscreen_chrome_opacity);}
                 let menu_width = ["Arquivo", "Editar", "Imagem", "Exibir", "Ajuda"]
                     .iter()
                     .map(|label| {
@@ -1605,7 +1712,7 @@ impl App {
                                         .add_enabled(
                                             self.image.is_some(),
                                             egui::Button::new(t("Imprimir"))
-                                                .shortcut_text("Ctrl+P"),
+                                                .shortcut_text(keymap::current_label("Ctrl+P")),
                                         )
                                         .clicked()
                                 {
@@ -1631,8 +1738,8 @@ impl App {
                                 ui.menu_button(t("Exportar"), |ui| {
                                     for (format, label, shortcut) in [
                                         (Format::Jpeg, format!("Exportar JPEG (Qld {}%)", self.settings.jpeg_quality), "S"),
-                                        (Format::Png, "Exportar PNG (sem perdas)".to_owned(), ""),
-                                        (Format::Webp, format!("Exportar WebP (Qld {}%)", self.settings.webp_quality), "Ctrl+Shift+S"),
+                                        (Format::Png, "Exportar PNG (sem perdas)".to_owned(), "Q"),
+                                        (Format::Webp, format!("Exportar WebP (Qld {}%)", self.settings.webp_quality), "W"),
                                     ] {
                                         if item(ui, &label, shortcut) { self.export_dialog(format); }
                                     }
@@ -1648,6 +1755,17 @@ impl App {
                                             .into(),
                                         format: Format::Webp,
                                         quality: 80,
+                                        resize: false,
+                                        width: "1920".into(),
+                                        height: "1080".into(),
+                                        proportional: true,
+                                        percentage: false,
+                                        percent: "50".into(),
+                                        rename: false,
+                                        name: "image_".into(),
+                                        digits: "3".into(),
+                                        start: "1".into(),
+                                        convert: true,
                                     });
                                 }
                                 ui.separator();
@@ -1770,6 +1888,7 @@ impl App {
                                 }
                             });
                             ui.menu_button(t("Exibir"), |ui| {
+                                if self.animation.is_some() { if ui.checkbox(&mut self.animation_paused,t("Pausar animação GIF")).changed() {self.animation_loops=0;} ui.separator(); }
                                 ui.checkbox(
                                     &mut self.settings.show_toolbar,
                                     t("Barra de ferramentas"),
@@ -1838,17 +1957,19 @@ impl App {
                     });
             });
         self.menu_bottom = menu.response.rect.bottom();
+        self.chrome_rect=menu.response.rect;
     }
 
     fn toolbar(&mut self, ctx: &egui::Context) {
         if !self.settings.show_toolbar {
             return;
         }
-        egui::Area::new(egui::Id::new("compact_toolbar"))
+        let toolbar=egui::Area::new(egui::Id::new("compact_toolbar"))
             .order(egui::Order::Foreground)
             .fixed_pos(Pos2::new(0.0, self.menu_bottom))
             .show(ctx, |ui| {
                 self.menu_visuals(ui);
+                if self.fullscreen {ui.set_opacity(self.fullscreen_chrome_opacity);}
                 ui.set_width(10.0 * 30.0);
                 ui.spacing_mut().item_spacing = Vec2::ZERO;
                 ui.spacing_mut().interact_size.y = 30.0;
@@ -1865,9 +1986,6 @@ impl App {
                                     let loaded = self.image.is_some();
                                     if tool_button(ui, "Abrir", true) {
                                         self.choose_open();
-                                    }
-                                    if tool_button(ui, "Salvar", loaded) {
-                                        self.save_original();
                                     }
                                     if tool_button(ui, "Anterior", !self.files.is_empty()) {
                                         self.navigate(-1);
@@ -1888,6 +2006,9 @@ impl App {
                                         self.set_fit(Fit::All);
                                     }
 
+                                    if tool_button(ui, "Tela cheia / janela", true) {
+                                        self.toggle_fullscreen(ctx);
+                                    }
                                     if tool_button(
                                         ui,
                                         if self.slide {
@@ -1908,6 +2029,7 @@ impl App {
                         );
                     });
             });
+        self.chrome_rect=self.chrome_rect.union(toolbar.response.rect);
     }
 
     fn status_bar(&self, ctx: &egui::Context) {
@@ -2113,12 +2235,12 @@ impl App {
                     self.menu_visuals(ui);
                     if self.loading.is_some(){ui.disable();}
                     if self.fullscreen {
-                        if item(ui,"Sair da tela cheia","Enter / F / Esc"){self.toggle_fullscreen(ctx);}
-                        if item(ui,"Imagem anterior","←"){self.navigate(-1);}
-                        if item(ui,"Próxima imagem","→"){self.navigate(1);}
+                        if item(ui,"Sair da tela cheia",""){self.toggle_fullscreen(ctx);}
                         ui.menu_button(t("Modo de zoom"),|ui|{for (label,fit) in FITS {if item(ui,label,""){self.set_fit(fit);}}});
                         if item(ui,if self.slide{"Parar apresentação"}else{"Iniciar apresentação"},"Ctrl+W"){self.slide = !self.slide;self.last_slide=Instant::now();}
                         if item(ui,"Fechar programa",""){self.close_program(ctx);}
+                        ui.separator();
+                        ui.add_enabled_ui(!self.files.is_empty(),|ui|{if item(ui,"Ir para imagem",""){self.dialog=Some(Dialog::GoTo(String::new(),true));}});
                         return;
                     }
                     ui.menu_button(t("Recortar"), |ui| {
@@ -2134,6 +2256,8 @@ impl App {
                     if item(ui,"Inverter proporção",""){self.invert_crop_ratio();}
                     if item(ui,"Aplicar recorte","Ctrl+Y"){self.apply_crop(ctx);}
                     if item(ui,"Copiar","Ctrl+C"){self.clipboard_copy();}
+                    ui.separator();
+                    ui.add_enabled_ui(!self.files.is_empty(),|ui|{if item(ui,"Ir para imagem",""){self.dialog=Some(Dialog::GoTo(String::new(),true));}});
                 });
             }else if !self.busy && self.loading.is_none() && self.error.is_none() && self.dialog.is_none() {
                 egui::Area::new(egui::Id::new("welcome"))
@@ -2211,6 +2335,7 @@ impl App {
         };
         let mut keep = true;
         let title = match &dialog {
+            Dialog::GoTo(..) => "Ir para imagem",
             Dialog::Panorama { .. } => "Criar panorama",
             Dialog::Unsaved { .. } => "Alterações não salvas",
             Dialog::FolderEnd { .. } => "Fim da pasta",
@@ -2236,6 +2361,17 @@ impl App {
             ui.add_space(6.0);
             if dialog_header(ui,title) {keep=false;}
             match &mut dialog {
+                Dialog::GoTo(number,focus) => {
+                    ui.set_width(340.0);
+                    ui.label(format!("{}: 1–{}",t("Número da imagem"),self.files.len()));
+                    let enter=ctx.input_mut(|i|i.consume_key(egui::Modifiers::NONE,Key::Enter));
+                    let response=ui.add(egui::TextEdit::singleline(number).desired_width(140.0));
+                    if *focus {response.request_focus();*focus=false;}
+                    let destination=number.trim().parse::<usize>().ok().filter(|n|*n>=1 && *n<=self.files.len());
+                    if ui.add_enabled(destination.is_some(),egui::Button::new(t("Ir"))).clicked() || (enter && destination.is_some()) {
+                        if let Some(destination)=destination {self.navigate(destination as isize-1-self.index as isize);keep=false;}
+                    }
+                }
                 Dialog::Unsaved { action, cancel_selected } => {
                     ui.set_width(440.0);
                     ui.label(t("Esta imagem tem alterações não salvas. Deseja descartá-las?"));
@@ -2424,7 +2560,7 @@ impl App {
                     ui.horizontal_top(|ui| {
                         ui.set_max_height(400.0);
                         ui.allocate_ui_with_layout(Vec2::new(170.0,400.0),egui::Layout::top_down(egui::Align::Min),|ui|{
-                            for (index,name) in ["Aparência","Visualização","Tela cheia / Apresentação","Exportação","Idioma"].iter().enumerate(){
+                            for (index,name) in ["Aparência","Visualização","Tela cheia / Apresentação","Exportação","Idioma","Atalhos"].iter().enumerate(){
                                 ui.selectable_value(&mut self.settings_page,index,t(name));
                             }
                         });
@@ -2465,6 +2601,20 @@ impl App {
                                         ui.label("JPEG");ui.add(egui::Slider::new(&mut self.settings.jpeg_quality,1..=100).suffix("%"));
                                         ui.label("WebP");ui.add(egui::Slider::new(&mut self.settings.webp_quality,1..=100).suffix("%"));
                                     }
+                                    5=>{
+                                        ui.heading(t("Atalhos personalizáveis"));ui.separator();
+                                        ui.label(t("Digite a tecla ou combinação, por exemplo Alt+K ou Ctrl+Shift+R."));
+                                        ui.small(t("Navegação, área de transferência, Esc e Enter mantêm os atalhos padrão."));
+                                        for (action,default) in keymap::ACTIONS {
+                                            ui.horizontal(|ui| {
+                                                ui.add_sized([255.0,24.0],egui::Label::new(t(action)));
+                                                let value=self.settings.shortcuts.entry((*default).into()).or_insert_with(||(*default).into());
+                                                ui.add(egui::TextEdit::singleline(value).desired_width(150.0));
+                                            });
+                                        }
+                                        if !keymap::validation(&self.settings.shortcuts) {ui.colored_label(Color32::RED,t("Atalho inválido, reservado ou repetido. Os padrões serão usados até corrigir."));}
+                                        if ui.button(t("Restaurar atalhos padrão")).clicked() {self.settings.shortcuts.clear();}
+                                    }
                                     _=>{
                                         ui.heading(t("Idioma"));ui.separator();
                                         ui.radio_value(&mut self.settings.language,Language::English,"English");
@@ -2498,19 +2648,19 @@ impl App {
                         ui.label(format!("LumeView {}",env!("CARGO_PKG_VERSION")));ui.separator();
                         for(k,v)in [
                             ("← / →","Imagem anterior / próxima; com seleção, mover recorte"),("↑ / ↓","Mover imagem verticalmente; com seleção, mover recorte"),
-                            ("Espaço / Backspace","Próxima / anterior"),("Page Down / Page Up","Próxima / anterior"),("Ctrl + navegação","Pular 5 imagens"),
+                            ("Espaço / Backspace","Próxima / anterior"),("Page Down / Page Up","Rolar para baixo / cima; novo pressionamento no limite muda a imagem"),("Ctrl + navegação","Pular 5 imagens"),
                             ("Ctrl + 0–9","Avançar N (0 = 10); Shift inverte"),("Ctrl+Home / Ctrl+End","Primeira / última imagem"),
                             ("+ ou = / −","Ampliar / reduzir"),("1–7","Modos de ajuste, conforme menu Exibir"),("Enter / F","Tela cheia / janela"),("Duplo clique esquerdo","Tela cheia / janela"),("T","Mostrar / ocultar título da arte (tela cheia)"),
                             ("Esc","Cancelar seleção, sair da tela cheia ou fechar"),("F2 / F6","Renomear, incluindo extensão"),("F5 / U","Recarregar imagem e pasta"),
                             ("F7 / F8","Mover / copiar arquivo"),("Del / Shift+Del","Lixeira / exclusão permanente, com confirmação"),("F11","Ocultar / mostrar cursor em tela cheia"),
-                            ("I","Informações da imagem"),("P","Preferências"),("S","Exportar JPEG / WebP"),("Ctrl+P","Imprimir"),("Ctrl+O","Abrir imagem"),("Ctrl+S","Salvar imagem"),("Ctrl+Shift+S","Exportar WebP"),("Ctrl+A","Selecionar / desselecionar tudo"),
+                            ("I","Informações da imagem"),("P","Preferências"),("S","Exportar JPEG"),("W","Exportar WebP"),("Q","Exportar PNG"),("Ctrl+P","Imprimir"),("Ctrl+O","Abrir imagem"),("Ctrl+S","Salvar imagem"),("Ctrl+A","Selecionar / desselecionar tudo"),
                             ("Ctrl+Y","Aplicar recorte selecionado"),("Ctrl+Shift+L","Iniciar recorte JPEG sem perdas"),("Ctrl + setas","Redimensionar seleção proporcionalmente"),
                             ("Shift + setas","Mover seleção em passos maiores"),("Alt + setas","Alterar largura / altura da seleção"),
                             ("Ctrl+Z / Ctrl+J","Desfazer / refazer edições"),("Ctrl+C / Ctrl+Insert","Copiar imagem ou seleção"),("Ctrl+V","Colar como nova imagem"),
                             ("Ctrl+H","Tamanho original"),("Ctrl+G","Escala de cinza"),("Ctrl+R","Redimensionar"),("Ctrl+F","Procurar na pasta"),
                             ("Ctrl+M","Imagem aleatória"),("Ctrl+N","Abrir em outra janela"),("Ctrl+W","Iniciar / parar apresentação"),
                             ("Pause (Windows)","Pausar apresentação; outra tecla continua"),
-                        ]{ui.horizontal_wrapped(|ui|{icons::shortcut(ui,&t(k));ui.label(t(v));});}
+                        ]{ui.horizontal_wrapped(|ui|{icons::shortcut(ui,&keymap::current_label(&t(k)));ui.label(t(v));});}
                         ui.separator();ui.label(t("Edições comuns ficam em memória até exportar. Navegar descarta essas edições. Recorte JPEG sem perdas salva uma cópia com sufixo _crop, _crop1, _crop2, preservando o original. JPEG com orientação EXIF diferente de 1 usa recorte comum nesta versão."));
                         ui.label(t("Imagens animadas e multipáginas: apenas o primeiro quadro. Sem OCR, miniaturas, impressão, captura de tela, filtros 8BF ou edição IPTC nesta versão."));
                     });
@@ -2524,7 +2674,7 @@ impl App {
                     ui.set_width(520.0);
                     if ui.button(t("Adicionar imagens")).clicked() {
                         if let Some(selected) = rfd::FileDialog::new()
-                            .add_filter(t("Imagens"), &["jpg","jpeg","png","webp","avif","gif","bmp","tif","tiff","heic","ico"])
+                            .add_filter(t("Imagens"), &["jpg","jpeg","png","webp","avif","gif","bmp","tif","tiff","heic","ico","svg","svgz"])
                             .pick_files() { files.extend(selected.into_iter().map(panorama::Input::File)); }
                     }
                     if ui.add_enabled(self.image.is_some(), egui::Button::new(t("Adicionar imagem aberta"))).clicked() {
@@ -2560,16 +2710,48 @@ impl App {
                         keep = false;
                     }
                 },
-                Dialog::Batch{files,dest,format,quality}=>{
+                Dialog::Batch{files,dest,format,quality,resize,width,height,proportional,percentage,percent,rename,name,digits,start,convert}=>{
+                    ui.set_width(620.0);
+                    egui::ScrollArea::vertical().max_height(500.0).show(ui,|ui| {
                     ui.label(format!("{} {}",files.len(),t("imagens selecionadas")));
                     if ui.button(t("Selecionar imagens")).clicked(){if let Some(f)=rfd::FileDialog::new().pick_files(){*files=f;}}
                     if ui.button(t("Usar imagens da pasta atual")).clicked(){*files=self.files.clone();}
                     ui.label(format!("{}: {}",t("Destino"),dest.display()));
                     if ui.button(t("Escolher pasta de saída")).clicked(){if let Some(p)=rfd::FileDialog::new().pick_folder(){*dest=p;}}
-                    ui.horizontal(|ui|{ui.radio_value(format,Format::Jpeg,"JPEG");ui.radio_value(format,Format::Webp,"WebP");ui.radio_value(format,Format::Png,"PNG");});
+                    ui.checkbox(convert,t("Converter imagens"));
+                    if *convert {
+                        ui.horizontal(|ui|{ui.radio_value(format,Format::Jpeg,"JPEG");ui.radio_value(format,Format::Webp,"WebP");ui.radio_value(format,Format::Png,"PNG");});
+                    }
                     ui.add(egui::Slider::new(quality,1..=100).text(t("Qualidade")));
-                    ui.label(t("Converte os arquivos originais. Nomes existentes recebem um sufixo numérico."));
-                    if ui.add_enabled(!files.is_empty()&&dest.is_dir(),egui::Button::new("Converter")).clicked(){self.start_batch(files.clone(),dest.clone(),*format,*quality);keep=false;}
+                    ui.checkbox(resize,t("Redimensionar em lote"));
+                        if *resize {
+                            ui.horizontal(|ui| {ui.radio_value(percentage,false,t("Pixels"));ui.radio_value(percentage,true,t("Porcentagem"));});
+                            if *percentage {ui.horizontal(|ui|{ui.label("%");ui.add(egui::TextEdit::singleline(percent).desired_width(80.0));});ui.small(t("50% reduz largura e altura pela metade."));}
+                            else {
+                                ui.horizontal(|ui| {ui.label(t("Largura"));ui.add(egui::TextEdit::singleline(width).desired_width(80.0));ui.label(t("Altura"));ui.add(egui::TextEdit::singleline(height).desired_width(80.0));});
+                                ui.checkbox(proportional,t("Manter proporção"));
+                                ui.small(t("Com proporção mantida, as dimensões são os limites da imagem final."));
+                            }
+                        }
+                    if !*convert && *resize {ui.small(t("Mantém o formato original e salva cópias na pasta de saída."));}
+                    ui.separator();ui.checkbox(rename,t("Renomear em lote"));
+                    if *rename {
+                        ui.horizontal(|ui|{ui.label(t("Nome base"));ui.add(egui::TextEdit::singleline(name).desired_width(200.0));});
+                        ui.horizontal(|ui|{ui.label(t("Número de dígitos"));ui.add(egui::TextEdit::singleline(digits).desired_width(55.0));ui.label(t("Número inicial"));ui.add(egui::TextEdit::singleline(start).desired_width(100.0));});
+                        ui.small(t(if *convert || *resize {"A numeração será aplicada aos arquivos exportados; originais preservados."} else {"Sem conversão, renomeia os arquivos originais na própria pasta e mantém a extensão."}));
+                    }
+                    let dimensions=width.trim().parse::<u32>().ok().zip(height.trim().parse::<u32>().ok()).filter(|(w,h)|*w>0 && *h>0 && *w<=30000 && *h<=30000 && u64::from(*w)*u64::from(*h)<=100_000_000);
+                    let scale=percent.trim().replace(',',".").parse::<f64>().ok().filter(|p|p.is_finite() && *p>0.0 && *p<=1000.0);
+                    let resize_option=if *percentage {scale.map(batch::Resize::Percent)}else{dimensions.map(|(w,h)|batch::Resize::Pixels(w,h,*proportional))};
+                    let naming=digits.trim().parse::<usize>().ok().zip(start.trim().parse::<u64>().ok()).map(|(digits,start)|batch::Naming{base:name.clone(),digits,start}).filter(|n|n.filename(files.len().saturating_sub(1),format.ext()).is_ok());
+                    if let Some(naming)=naming.as_ref().filter(|_|*rename) {
+                        let extension=if *convert {format.ext().to_owned()}else{files.first().and_then(|p|p.extension()).map(|e|e.to_string_lossy().into_owned()).unwrap_or_else(||"jpg".into())};
+                        ui.label(naming.filename(0,&extension).unwrap_or_default());
+                    }
+                    let valid=!files.is_empty() && (*convert || *resize || *rename) && (!(*convert || *resize) || dest.is_dir()) && (!*rename || naming.is_some()) && (!*resize || resize_option.is_some());
+                    if ui.add_enabled(valid,egui::Button::new(t("Executar lote"))).clicked(){self.start_batch(files.clone(),dest.clone(),*format,*quality,if *resize {resize_option}else{None},if *rename {naming}else{None},*convert);keep=false;}
+                    });
+
                 },
             }
             if !matches!(dialog,Dialog::Delete { .. }|Dialog::FolderEnd { .. }|Dialog::Unsaved { .. }){
@@ -2675,7 +2857,7 @@ fn key_number(k: Key) -> Option<usize> {
 }
 fn item(ui: &mut egui::Ui, label: &str, shortcut: &str) -> bool {
     let clicked = ui
-        .add(egui::Button::new(t(label)).shortcut_text(shortcut))
+        .add(egui::Button::new(t(label)).shortcut_text(keymap::current_label(shortcut)))
         .clicked();
     if clicked {
         ui.close_menu();
@@ -2685,6 +2867,7 @@ fn item(ui: &mut egui::Ui, label: &str, shortcut: &str) -> bool {
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        keymap::set_current(&self.settings.shortcuts);
         #[cfg(windows)]
         {
             let down =
@@ -2738,9 +2921,44 @@ impl eframe::App for App {
         self.messages(ctx);
         self.shortcuts(ctx);
         if !self.fullscreen {
+            self.fullscreen_chrome_last=None;
+            self.fullscreen_chrome_opacity=0.0;
+            ctx.animate_bool_with_time(egui::Id::new("fullscreen_chrome_fade"),false,0.0);
             self.menus(ctx);
             self.toolbar(ctx);
             self.status_bar(ctx);
+        } else {
+            let now=Instant::now();
+            let pointer=ctx.input(|i|i.pointer.hover_pos());
+            let corner=pointer.is_some_and(|p|p.x<=32.0 && p.y<=32.0 && p.x>=0.0 && p.y>=0.0);
+            let on_controls=self.fullscreen_chrome_opacity>0.05 && pointer.is_some_and(|p|self.chrome_rect.expand(6.0).contains(p));
+            let popup=ctx.memory(|m|m.any_popup_open());
+            if corner || on_controls || (popup && self.fullscreen_chrome_last.is_some()) {self.fullscreen_chrome_last=Some(now);}
+            let visible=self.fullscreen_chrome_last.is_some_and(|last|now.duration_since(last)<Duration::from_secs(3));
+            self.fullscreen_chrome_opacity=ctx.animate_bool_with_time(egui::Id::new("fullscreen_chrome_fade"),visible,0.25);
+            if self.fullscreen_chrome_opacity>0.01 {
+                self.menus(ctx);
+                self.toolbar(ctx);
+            }
+            if let Some(last)=self.fullscreen_chrome_last.filter(|_|visible) {ctx.request_repaint_after(Duration::from_secs(3).saturating_sub(now.duration_since(last)));}
+        }
+        if self.animation.is_some() && self.path.is_some() && !self.busy && self.loading.is_none() {
+            if !self.animation_paused && self.dialog.is_none() && self.selection.is_none() {
+                let now=Instant::now();
+                if now >= self.animation_deadline {
+                    let animation=self.animation.as_ref().unwrap();
+                    if self.animation_index+1==animation.frames.len() {
+                        self.animation_loops+=1;
+                        if animation.loops.is_some_and(|limit|self.animation_loops>=limit) {self.animation_paused=true;}
+                    }
+                    if !self.animation_paused {self.animation_index=(self.animation_index+1)%animation.frames.len();}
+                    self.image=Some(animation.frames[self.animation_index].0.clone());
+                    self.animation_deadline=now+animation.frames[self.animation_index].1;
+                    self.has_alpha=self.image.as_ref().unwrap().pixels().any(|p|p[3]<255);
+                    self.update_texture(ctx);
+                }
+                ctx.request_repaint_after(self.animation_deadline.saturating_duration_since(now));
+            } else {self.animation_deadline=Instant::now()+self.animation.as_ref().unwrap().frames[self.animation_index].1;}
         }
         self.canvas(ctx);
         self.dialogs(ctx);
@@ -2768,7 +2986,7 @@ impl eframe::App for App {
             self.last_slide = Instant::now();
         }
         ctx.set_cursor_icon(
-            if self.fullscreen && self.hide_cursor && self.dialog.is_none() {
+            if self.fullscreen && self.hide_cursor && self.dialog.is_none() && self.fullscreen_chrome_opacity<=0.01 {
                 egui::CursorIcon::None
             } else {
                 egui::CursorIcon::Default

@@ -15,11 +15,12 @@ pub struct Book {
     locks: Vec<Mutex<()>>,
     indices: Vec<usize>,
     stamp: (u64, Option<SystemTime>),
+    ico_entries: Option<Vec<(usize,usize,[u8;16])>>,
 }
 pub fn supported(p: &Path) -> bool {
     p.extension()
         .and_then(|s| s.to_str())
-        .is_some_and(|s| s.eq_ignore_ascii_case("cbz"))
+        .is_some_and(|s| s.eq_ignore_ascii_case("cbz") || s.eq_ignore_ascii_case("ico"))
 }
 fn stamp(p: &Path) -> (u64, Option<SystemTime>) {
     std::fs::metadata(p)
@@ -40,6 +41,7 @@ pub fn metadata(p: &Path) -> Option<std::fs::Metadata> {
 }
 impl Book {
     pub fn open(source: PathBuf) -> backend::Result<Arc<Self>> {
+        if source.extension().is_some_and(|e|e.eq_ignore_ascii_case("ico")) {return Self::open_ico(source);}
         let file = std::fs::File::open(&source).map_err(|e| e.to_string())?;
         let mut archive =
             zip::ZipArchive::new(file).map_err(|_| "Não foi possível abrir o CBZ. O arquivo está corrompido ou não é um arquivo ZIP válido.".to_owned())?;
@@ -88,6 +90,7 @@ impl Book {
             locks,
             indices,
             stamp,
+            ico_entries: None,
         });
         BOOKS
             .get_or_init(Default::default)
@@ -96,12 +99,49 @@ impl Book {
             .push(Arc::downgrade(&book));
         Ok(book)
     }
+    fn open_ico(source: PathBuf) -> backend::Result<Arc<Self>> {
+        let data=std::fs::read(&source).map_err(|e|e.to_string())?;
+        let invalid=||"Não foi possível abrir o ICO. O arquivo está inválido ou corrompido.".to_owned();
+        if data.get(..4)!=Some(&[0,0,1,0]) {return Err(invalid());}
+        let count=data.get(4..6).map(|v|u16::from_le_bytes([v[0],v[1]]) as usize).ok_or_else(invalid)?;
+        if count==0 || count>1024 || data.len()<6+16*count {return Err(invalid());}
+        let mut entries=Vec::new();let mut names=Vec::new();
+        for index in 0..count {
+            let entry:[u8;16]=data[6+index*16..22+index*16].try_into().unwrap();
+            let length=u32::from_le_bytes(entry[8..12].try_into().unwrap()) as usize;
+            let offset=u32::from_le_bytes(entry[12..16].try_into().unwrap()) as usize;
+            if length==0 || length as u64>MAX_PAGE || offset<6+16*count || offset.checked_add(length).is_none_or(|end|end>data.len()) {return Err(invalid());}
+            let w=if entry[0]==0 {256}else{u32::from(entry[0])};
+            let h=if entry[1]==0 {256}else{u32::from(entry[1])};
+            let bits=u16::from_le_bytes([entry[6],entry[7]]);
+            names.push(format!("{} · {} × {} · {} bits",index+1,w,h,bits));
+            entries.push((offset,length,entry));
+        }
+        let temp=tempfile::Builder::new().prefix("lumeview-ico-").tempdir().map_err(|e|e.to_string())?;
+        let pages=(0..count).map(|i|temp.path().join(format!("{i:08}.ico"))).collect();
+        let stamp=stamp(&source);
+        let book=Arc::new(Self{source,pages,names,temp,locks:(0..count).map(|_|Mutex::new(())).collect(),indices:Vec::new(),stamp,ico_entries:Some(entries)});
+        BOOKS.get_or_init(Default::default).lock().map_err(|e|e.to_string())?.push(Arc::downgrade(&book));
+        Ok(book)
+    }
     fn materialize(&self, i: usize) -> backend::Result<()> {
         let _guard = self.locks[i].lock().map_err(|e| e.to_string())?;
         if stamp(&self.source) != self.stamp {
+            if self.ico_entries.is_some() {return Err("O arquivo ICO mudou no disco. Use F5 para reabrir.".into());}
             return Err("O quadrinho mudou no disco. Use F5 para reabrir.".into());
         }
         if self.pages[i].is_file() {
+            return Ok(());
+        }
+        if let Some(entries)=&self.ico_entries {
+            let (offset,length,mut entry)=entries[i];
+            let data=std::fs::read(&self.source).map_err(|e|e.to_string())?;
+            let payload=data.get(offset..offset+length).ok_or("ICO inválido.")?;
+            entry[12..16].copy_from_slice(&22u32.to_le_bytes());
+            let mut temp=tempfile::NamedTempFile::new_in(self.temp.path()).map_err(|e|e.to_string())?;
+            temp.write_all(&[0,0,1,0,1,0]).and_then(|_|temp.write_all(&entry)).and_then(|_|temp.write_all(payload)).map_err(|e|e.to_string())?;
+            temp.flush().map_err(|e|e.to_string())?;
+            temp.persist(&self.pages[i]).map_err(|e|e.to_string())?;
             return Ok(());
         }
         let file = std::fs::File::open(&self.source).map_err(|e| e.to_string())?;
@@ -132,6 +172,24 @@ pub fn load(p: &Path) -> Option<backend::Result<backend::Loaded>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn ico_entries_are_independent_and_source_is_preserved() {
+        let source=PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("assets/lumeview.ico");
+        let bytes=std::fs::read(&source).unwrap();
+        let book=Book::open(source.clone()).unwrap();
+        assert!(book.pages.len()>1);
+        let entries=book.ico_entries.as_ref().unwrap();
+        for (i,(_,_,entry)) in entries.iter().enumerate() {
+            let image=load(&book.pages[i]).unwrap().unwrap();
+            let w=if entry[0]==0 {256}else{u32::from(entry[0])};
+            let h=if entry[1]==0 {256}else{u32::from(entry[1])};
+            assert_eq!(image.pixels.dimensions(),(w,h));
+        }
+        assert_eq!(std::fs::read(source).unwrap(),bytes);
+        let dir=tempfile::tempdir().unwrap();let bad=dir.path().join("bad.ico");
+        std::fs::write(&bad,b"\0\0\x01\0\x02\0").unwrap();
+        assert!(Book::open(bad).is_err());
+    }
     #[test]
     fn corrupt_page_crc_has_localizable_error_and_is_not_cached() {
         let fixture = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/sample.cbz");

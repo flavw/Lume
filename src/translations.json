@@ -1090,5 +1090,133 @@
   "Add open image": [
     "Añadir imagen abierta",
     "Ajouter l’image ouverte"
+  ],
+  "Pause GIF animation": [
+    "Pausar animación GIF",
+    "Suspendre l’animation GIF"
+  ],
+  "Batch resize": [
+    "Redimensionar por lotes",
+    "Redimensionner par lots"
+  ],
+  "With aspect ratio preserved, dimensions bound the output image.": [
+    "Con proporción conservada, las dimensiones limitan la imagen final.",
+    "Avec les proportions conservées, les dimensions limitent l’image finale."
+  ],
+  "Custom shortcuts": [
+    "Atajos personalizables",
+    "Raccourcis personnalisables"
+  ],
+  "Type a key or combination, such as Alt+K or Ctrl+Shift+R.": [
+    "Escribe una tecla o combinación, como Alt+K o Ctrl+Shift+R.",
+    "Saisissez une touche ou combinaison, comme Alt+K ou Ctrl+Shift+R."
+  ],
+  "Navigation, clipboard, Esc and Enter keep standard shortcuts.": [
+    "Navegación, portapapeles, Esc y Enter conservan los atajos estándar.",
+    "La navigation, le presse-papiers, Échap et Entrée conservent leurs raccourcis standard."
+  ],
+  "Invalid, reserved or duplicate shortcut. Defaults apply until corrected.": [
+    "Atajo inválido, reservado o duplicado. Se usan los predeterminados hasta corregirlo.",
+    "Raccourci invalide, réservé ou en double. Les valeurs par défaut restent actives jusqu’à correction."
+  ],
+  "Restore default shortcuts": [
+    "Restaurar atajos predeterminados",
+    "Rétablir les raccourcis par défaut"
+  ],
+  "GIF exceeds the animation memory or frame limit.": [
+    "El GIF supera el límite de memoria o cuadros.",
+    "Le GIF dépasse la limite mémoire ou le nombre d’images."
+  ],
+  "GIF contains no frames.": [
+    "El GIF no contiene cuadros.",
+    "Le GIF ne contient aucune image."
+  ],
+  "GIF animation is supported. Other multipage images display the first page. OCR, thumbnails, screen capture, 8BF filters and IPTC editing are not available.": [
+    "Se admiten GIF animados. Otras imágenes multipágina muestran la primera página. Sin OCR, miniaturas, captura, filtros 8BF ni edición IPTC.",
+    "Les GIF animés sont pris en charge. Les autres images multipages affichent la première page. OCR, miniatures, capture, filtres 8BF et édition IPTC indisponibles."
+  ],
+  "Convert images": [
+    "Convertir imágenes",
+    "Convertir les images"
+  ],
+  "Pixels": [
+    "Píxeles",
+    "Pixels"
+  ],
+  "Percentage": [
+    "Porcentaje",
+    "Pourcentage"
+  ],
+  "50% halves both width and height.": [
+    "50% reduce a la mitad el ancho y la altura.",
+    "50 % réduit de moitié la largeur et la hauteur."
+  ],
+  "Batch rename": [
+    "Renombrar por lotes",
+    "Renommer par lots"
+  ],
+  "Base name": [
+    "Nombre base",
+    "Nom de base"
+  ],
+  "Number of digits": [
+    "Número de dígitos",
+    "Nombre de chiffres"
+  ],
+  "Starting number": [
+    "Número inicial",
+    "Numéro initial"
+  ],
+  "Numbering applies to exported files; originals are preserved.": [
+    "La numeración se aplica a los archivos exportados; se conservan los originales.",
+    "La numérotation s’applique aux fichiers exportés ; les originaux sont conservés."
+  ],
+  "Without conversion, renames original files in their own folder and keeps their extensions.": [
+    "Sin conversión, renombra los originales en su carpeta y conserva sus extensiones.",
+    "Sans conversion, renomme les originaux dans leur dossier et conserve leurs extensions."
+  ],
+  "Run batch": [
+    "Ejecutar lote",
+    "Exécuter le lot"
+  ],
+  "Invalid name or numbering.": [
+    "Nombre o numeración inválidos.",
+    "Nom ou numérotation invalides."
+  ],
+  "Invalid percentage.": [
+    "Porcentaje inválido.",
+    "Pourcentage invalide."
+  ],
+  "Keeps the original format and saves copies to the output folder.": [
+    "Mantiene el formato original y guarda copias en la carpeta de salida.",
+    "Conserve le format original et enregistre des copies dans le dossier de sortie."
+  ],
+  "Go to image": [
+    "Ir a imagen",
+    "Aller à une image"
+  ],
+  "Image number": [
+    "Número de imagen",
+    "Numéro de l’image"
+  ],
+  "Go": [
+    "Ir",
+    "Aller"
+  ],
+  "Scroll down / up; press again at the edge to change image": [
+    "Desplazar abajo / arriba; pulsa otra vez en el borde para cambiar de imagen",
+    "Défiler vers le bas / haut ; appuyez à nouveau au bord pour changer d’image"
+  ],
+  "Additional formats (ImageMagick)": [
+    "Formatos adicionales (ImageMagick)",
+    "Formats supplémentaires (ImageMagick)"
+  ],
+  "Could not open the ICO. The file is invalid or corrupted.": [
+    "No se pudo abrir el ICO. El archivo es inválido o está dañado.",
+    "Impossible d’ouvrir l’ICO. Le fichier est invalide ou endommagé."
+  ],
+  "The ICO file has changed on disk. Press F5 to reopen it.": [
+    "El archivo ICO ha cambiado. Pulsa F5 para volver a abrirlo.",
+    "Le fichier ICO a changé. Appuyez sur F5 pour le rouvrir."
   ]
 }

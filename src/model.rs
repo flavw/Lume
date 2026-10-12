@@ -146,6 +146,8 @@ pub fn scale(mode: Fit, image: (u32, u32), view: (f32, f32), zoom: f32) -> (f32,
     (s, s)
 }
 
+pub const EXTRA_EXTENSIONS: &[&str] = &["psd","psb","xcf","tga","dds","exr","hdr","jp2","j2k","qoi","pcx","pict","pct","pbm","pgm","ppm","pnm","dng","cr2","cr3","crw","nef","nrw","arw","raf","orf","rw2","srw","pef","wmf","emf"];
+
 pub fn supported(path: &Path) -> bool {
     path.extension()
         .and_then(|s| s.to_str())
@@ -165,9 +167,34 @@ pub fn supported(path: &Path) -> bool {
                     | "ico"
                     | "heic"
                     | "heif"
-            )
+                    | "svg"
+                    | "svgz"
+            ) || EXTRA_EXTENSIONS.contains(&s.to_ascii_lowercase().as_str())
         })
         .unwrap_or(false)
+}
+
+/// Scroll like the vertical arrows; a fresh press at the boundary changes page.
+pub fn page_step(pan: f32, limit: f32, direction: i32, repeat: bool) -> (f32,bool) {
+    let limit=limit.max(0.0);
+    let pan=pan.clamp(-limit,limit);
+    let at_edge=if direction>0 {pan<=-limit+0.01}else{pan>=limit-0.01};
+    if at_edge {return (pan,!repeat);}
+    ((pan-direction as f32*40.0).clamp(-limit,limit),false)
+}
+
+#[cfg(test)]
+mod page_tests {
+    use super::*;
+    #[test]
+    fn reaching_edge_requires_another_press() {
+        assert_eq!(page_step(0.0,30.0,1,false),(-30.0,false));
+        assert_eq!(page_step(-30.0,30.0,1,true),(-30.0,false));
+        assert_eq!(page_step(-30.0,30.0,1,false),(-30.0,true));
+        assert_eq!(page_step(0.0,30.0,-1,false),(30.0,false));
+        assert_eq!(page_step(30.0,30.0,-1,false),(30.0,true));
+        assert_eq!(page_step(0.0,0.0,1,false),(0.0,true));
+    }
 }
 
 pub fn shift_delete_cut(shift: bool, control: bool, alt: bool) -> bool {

@@ -191,6 +191,12 @@ pub fn tool_button(ui: &mut egui::Ui, label: &str, enabled: bool) -> bool {
                     ui.painter().circle_stroke(point(x, y), 2.5 * scale, stroke);
                 }
             }
+            "Tela cheia / janela" => {
+                line(&[(2., 7.), (2., 2.), (7., 2.)]);
+                line(&[(13., 2.), (18., 2.), (18., 7.)]);
+                line(&[(18., 13.), (18., 18.), (13., 18.)]);
+                line(&[(7., 18.), (2., 18.), (2., 13.)]);
+            }
             "Parar apresentação" => {
                 rect(4., 4., 12., 12.);
             }
