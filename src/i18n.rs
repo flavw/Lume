@@ -40,6 +40,23 @@ pub fn t(text: &str) -> String {
 fn english(text: &str) -> String {
     let text = text.trim_end_matches("...").trim_end_matches('…');
     let pairs = [
+        ("Transformar", "Transform"),
+        ("Adicionar imagem aberta", "Add open image"),
+        ("Imagem aberta", "Open image"),
+        ("Mover para cima", "Move up"),
+        ("Mover para baixo", "Move down"),
+        ("Criar panorama", "Create panorama"),
+        ("Adicionar imagens", "Add images"),
+        ("A ordem abaixo define a sequência das imagens.", "The order below defines the image sequence."),
+        ("Remover da lista", "Remove from list"),
+        ("Horizontal", "Horizontal"),
+        ("Vertical", "Vertical"),
+        ("Espaçamento (px)", "Gap (px)"),
+        ("Cor do espaçamento e fundo", "Gap and background color"),
+        ("Mantém o tamanho original e centraliza imagens de tamanhos diferentes.", "Keeps original sizes and centers images of different sizes."),
+        ("O panorama abre como nova imagem. Use Salvar para gravar.", "The panorama opens as a new image. Use Save to write it to disk."),
+        ("Selecione pelo menos duas imagens.", "Select at least two images."),
+        ("Panorama grande demais.", "The panorama is too large (512 MiB memory limit)."),
         ("Falha na verificação de integridade da página (CRC). Provavelmente há um erro ou corrupção no arquivo ZIP/CBZ. Teste o arquivo com o 7-Zip ou obtenha uma nova cópia.", "Page integrity check failed (CRC). The ZIP/CBZ archive probably contains an error or corrupted data. Test the archive with 7-Zip or obtain a new copy."),
         ("Não foi possível abrir o CBZ. O arquivo está corrompido ou não é um arquivo ZIP válido.", "Could not open the CBZ. The file is corrupted or is not a valid ZIP archive."),
         ("Não foi possível ler as páginas do CBZ. O arquivo pode estar corrompido ou protegido por senha.", "Could not read the CBZ pages. The file may be corrupted or password-protected."),
