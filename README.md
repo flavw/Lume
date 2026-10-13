@@ -8,6 +8,32 @@ A minimalist image viewer written in Rust, inspired by IrfanView. LumeView focus
 
 Download **LumeView-Setup.exe** from the [latest release](https://github.com/flavw/LumeView/releases/latest). The current Windows build is 64-bit. The installer is unsigned, so Windows SmartScreen may show an unrecognized-app warning.
 
+## Install from PowerShell (optional)
+
+Download the helper and review it before running:
+
+```powershell
+Invoke-WebRequest -UseBasicParsing 'https://raw.githubusercontent.com/flavw/LumeView/main/install.ps1' -OutFile '.\install-lumeview.ps1'
+notepad .\install-lumeview.ps1
+```
+
+Then install for the current user (close LumeView first):
+
+```powershell
+& .\install-lumeview.ps1
+```
+
+To test downloading and SHA-256 verification without installing:
+
+```powershell
+& .\install-lumeview.ps1 -DownloadOnly
+```
+
+The helper pins release **0.33.0**, checks the installer's expected SHA-256,
+and runs it with `/S`. It does not change execution policies or security settings.
+If Windows blocks the script, use the normal installer or Microsoft Store distribution.
+The checksum verifies the downloaded file matches the pinned release; it is not a digital signature.
+
 ## Features
 
 - Fast native decoding of JPEG, PNG and WebP, asynchronous loading and a bounded image cache.
