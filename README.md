@@ -6,6 +6,8 @@ A minimalist image viewer written in Rust, inspired by IrfanView. LumeView focus
 
 ## Download
 
+Get LumeView from the [Microsoft Store](https://apps.microsoft.com/detail/9n0wr4v1nxkf).
+
 Download **LumeView-Setup.exe** from the [latest release](https://github.com/flavw/LumeView/releases/latest). The current Windows build is 64-bit. The installer is unsigned, so Windows SmartScreen may show an unrecognized-app warning.
 
 ## Features
