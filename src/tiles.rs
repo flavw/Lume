@@ -1,5 +1,5 @@
 //! Original-pixel tiles are prepared lazily, off the UI thread. Small fit previews remain cached.
-use eframe::egui::{self, Color32, Pos2, Rect, Vec2};
+use eframe::egui::{self, Pos2, Rect, Vec2};
 use image::RgbaImage;
 use std::{
     collections::{HashSet, VecDeque},
@@ -99,7 +99,9 @@ impl Renderer {
         shown: Rect,
         view: Rect,
         preview: egui::TextureId,
+        rotation: crate::view_rotation::Rotation,
     ) {
+        let view=rotation.inverse().rect(view,shown.center());
         self.start();
         let generation = self.generation.load(Ordering::Relaxed);
         if let Some(rx) = &self.ready {
@@ -167,11 +169,11 @@ impl Renderer {
                         shown.min + Vec2::new(x as f32 * sx, y as f32 * sy),
                         size,
                     );
-                    painter.image(
+                    rotation.paint(painter,
                         item.1.id(),
                         dest,
                         Rect::from_min_max(Pos2::ZERO, Pos2::new(1., 1.)),
-                        Color32::WHITE,
+                        shown.center(),
                     );
                     self.cache.push_back(item);
                 } else {
@@ -185,7 +187,7 @@ impl Renderer {
                             (y + side).min(image.height()) as f32 / image.height() as f32,
                         ),
                     );
-                    painter.image(preview, dest, uv, Color32::WHITE);
+                    rotation.paint(painter,preview,dest,uv,shown.center());
                     if self.pending.len() < CACHE && self.pending.insert(key) {
                         let _ = self.worker.as_ref().unwrap().send(Job {
                             key,

@@ -10,7 +10,7 @@ pub const ACTIONS: &[(&str,&str)] = &[
     ("Tela cheia / janela","F"), ("Desfazer","Ctrl+Z"), ("Refazer","Ctrl+J"),
     ("Aplicar recorte","Ctrl+Y"), ("Redimensionar","Ctrl+R"), ("Escala de cinza","Ctrl+G"),
     ("Procurar na pasta","Ctrl+F"), ("Imagem aleatória","Ctrl+M"), ("Apresentação","Ctrl+W"),
-    ("Atalhos","F1"),
+    ("Atalhos","F1"), ("Alternar zoom entre centro e canto superior esquerdo","C"),
 ];
 pub fn parse(value: &str) -> Option<(Key,Modifiers)> {
     let mut m = Modifiers::NONE;
@@ -71,5 +71,16 @@ mod tests {
         assert!(remap(Key::I,Modifiers::NONE,&map).is_none());
         map.insert("P".into(),"Alt+K".into()); assert!(!validation(&map));
         map.insert("P".into(),"Escape".into()); assert!(!validation(&map));
+    }
+    #[test]
+    fn alignment_shortcut_can_be_remapped_without_affecting_copy() {
+        let mut map=BTreeMap::new();
+        assert!(same(remap(Key::C,Modifiers::NONE,&map).unwrap(),parse("C").unwrap()));
+        map.insert("C".into(),"Alt+K".into());
+        assert!(validation(&map));
+        assert!(same(remap(Key::K,Modifiers::ALT,&map).unwrap(),parse("C").unwrap()));
+        assert!(remap(Key::C,Modifiers::NONE,&map).is_none());
+        let (key,modifiers)=parse("Ctrl+C").unwrap();
+        assert!(same(remap(key,modifiers,&map).unwrap(),(key,modifiers)));
     }
 }

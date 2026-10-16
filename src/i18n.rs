@@ -77,6 +77,14 @@ pub fn t(text: &str) -> String {
 fn english(text: &str) -> String {
     let text = text.trim_end_matches("...").trim_end_matches('…');
     let pairs = [
+        ("Girar exibição", "Rotate view"),
+        ("Girar exibição 90° à direita", "Rotate view 90° clockwise"),
+        ("Girar exibição 90° à esquerda", "Rotate view 90° counterclockwise"),
+        ("Restaurar orientação da exibição", "Reset view orientation"),
+        ("Iniciar zoom no canto superior esquerdo (C)", "Start zoom at the top-left corner (C)"),
+        ("Alternar zoom entre centro e canto superior esquerdo", "Toggle zoom between center and top-left corner"),
+        ("Zoom: canto superior esquerdo", "Zoom: top-left corner"),
+        ("Zoom: centro", "Zoom: center"),
         ("Formatos adicionais (ImageMagick)", "Additional formats (ImageMagick)"),
         ("Não foi possível abrir o ICO. O arquivo está inválido ou corrompido.", "Could not open the ICO. The file is invalid or corrupted."),
         ("O arquivo ICO mudou no disco. Use F5 para reabrir.", "The ICO file has changed on disk. Press F5 to reopen it."),

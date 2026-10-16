@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10" xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities" IgnorableNamespaces="uap desktop rescap">
+  <Identity Name="3045flavw.LumeView" Publisher="CN=FF0EDBCF-B587-41E0-B798-5CE27FC79692" Version="0.35.1.0" ProcessorArchitecture="x64" />
+  <Properties><DisplayName>LumeView</DisplayName><PublisherDisplayName>flavw</PublisherDisplayName><Description>Visualizador de imagens LumeView</Description><Logo>Assets\Logo50.png</Logo></Properties>
+  <Resources><Resource Language="en-us"/><Resource Language="pt-br"/><Resource Language="es-es"/><Resource Language="fr-fr"/></Resources>
+  <Dependencies><TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26100.0"/></Dependencies>
+  <Applications><Application Id="LumeView" Executable="lumeview.exe" EntryPoint="Windows.FullTrustApplication">
+    <uap:VisualElements DisplayName="LumeView" Description="Visualizador de imagens LumeView" Square150x150Logo="Assets\Logo150.png" Square44x44Logo="Assets\Logo44.png" BackgroundColor="transparent"/>
+    <Extensions><uap:Extension Category="windows.fileTypeAssociation"><uap:FileTypeAssociation Name="lumeview.image"><uap:DisplayName>Imagem LumeView</uap:DisplayName><uap:SupportedFileTypes><uap:FileType>.jpg</uap:FileType><uap:FileType>.jpeg</uap:FileType><uap:FileType>.png</uap:FileType><uap:FileType>.webp</uap:FileType><uap:FileType>.avif</uap:FileType><uap:FileType>.gif</uap:FileType><uap:FileType>.bmp</uap:FileType><uap:FileType>.tif</uap:FileType><uap:FileType>.tiff</uap:FileType><uap:FileType>.ico</uap:FileType><uap:FileType>.heic</uap:FileType><uap:FileType>.svg</uap:FileType><uap:FileType>.svgz</uap:FileType><uap:FileType>.cbz</uap:FileType></uap:SupportedFileTypes></uap:FileTypeAssociation></uap:Extension></Extensions>
+  </Application></Applications>
+  <Capabilities><rescap:Capability Name="runFullTrust"/></Capabilities>
+</Package>

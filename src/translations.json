@@ -1,4 +1,12 @@
 {
+  "Rotate view": ["Girar la vista", "Tourner la vue"],
+  "Rotate view 90° clockwise": ["Girar la vista 90° a la derecha", "Tourner la vue de 90° vers la droite"],
+  "Rotate view 90° counterclockwise": ["Girar la vista 90° a la izquierda", "Tourner la vue de 90° vers la gauche"],
+  "Reset view orientation": ["Restablecer la orientación de la vista", "Réinitialiser l’orientation de la vue"],
+  "Start zoom at the top-left corner (C)": ["Iniciar el zoom en la esquina superior izquierda (C)", "Commencer le zoom dans le coin supérieur gauche (C)"],
+  "Toggle zoom between center and top-left corner": ["Alternar el zoom entre el centro y la esquina superior izquierda", "Basculer le zoom entre le centre et le coin supérieur gauche"],
+  "Zoom: top-left corner": ["Zoom: esquina superior izquierda", "Zoom : coin supérieur gauche"],
+  "Zoom: center": ["Zoom: centro", "Zoom : centre"],
   "Format": [
     "Formato",
     "Format"

@@ -112,6 +112,30 @@ pub enum WheelAction {
     Pan,
     Navigate,
 }
+
+/// Initial scroll offset; dimensions that fit stay centered.
+pub fn initial_pan(size: (f32, f32), view: (f32, f32), top_left: bool, fit: Fit) -> (f32, f32) {
+    let x = ((size.0 - view.0) / 2.0).max(0.0);
+    let y = ((size.1 - view.1) / 2.0).max(0.0);
+    (if top_left { x } else { 0.0 }, if top_left || fit == Fit::Width { y } else { 0.0 })
+}
+
+#[cfg(test)]
+mod alignment_tests {
+    use super::*;
+    #[test]
+    fn overflowing_axes_align_to_top_left_and_fitting_axes_stay_centered() {
+        assert_eq!(initial_pan((2400.0,1800.0),(800.0,600.0),true,Fit::Original),(800.0,600.0));
+        assert_eq!(initial_pan((400.0,1800.0),(800.0,600.0),true,Fit::Custom),(0.0,600.0));
+        assert_eq!(initial_pan((2400.0,300.0),(800.0,600.0),true,Fit::Height),(800.0,0.0));
+        assert_eq!(initial_pan((400.0,300.0),(800.0,600.0),true,Fit::Original),(0.0,0.0));
+    }
+    #[test]
+    fn centered_mode_preserves_width_fit_reading_behavior() {
+        assert_eq!(initial_pan((2400.0,1800.0),(800.0,600.0),false,Fit::Original),(0.0,0.0));
+        assert_eq!(initial_pan((800.0,1800.0),(800.0,600.0),false,Fit::Width),(0.0,600.0));
+    }
+}
 /// Modifiers are evaluated for each wheel event; manual zoom does not change the base policy.
 pub fn wheel_action(base: Fit, ctrl: bool, alt: bool) -> WheelAction {
     if ctrl || alt {

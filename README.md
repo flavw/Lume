@@ -18,11 +18,13 @@ The EXE installer downloaded from GitHub is unsigned, so Windows SmartScreen may
 - Fast native decoding of JPEG, PNG and WebP, asynchronous loading and a bounded image cache.
 - Minimal text menus; toolbar enabled by default and optional status bar.
 - Original-size viewing, seven zoom modes, fullscreen and slideshow.
+- Rotate the view 90° clockwise or counterclockwise from View, or reset its orientation. Rotation stays active while browsing during the session and does not change source pixels, saved images or clipboard copies.
 - Animated GIF playback with frame timing and loop counts; pause via View.
 - SVG/SVGZ viewing through the bundled ImageMagick renderer (rasterized for display).
 - Fullscreen menus and toolbar fade in at the top-left corner and hide after three seconds away from the controls.
 - Batch resizing by pixels or percentage, with optional aspect-ratio preservation and original-format output. Batch naming supports a base name, digit count and starting number.
 - Customizable primary shortcuts under Edit → Preferences → Shortcuts, with conflict validation and default restoration.
+- Optional top-left alignment for images larger than the viewport, available under Preferences → Viewing. Press C to switch between centered and top-left zoom; the preference is saved.
 - Wallpaper crops: Free, 1:1, 16:9, 9:16, 10:16, 8:16, original and custom aspect ratios; rule-of-thirds grid and resizable handles.
 - Lossless JPEG cropping and rotation through jpegtran. Numbered copies preserve the source; imperfect rotations are rejected.
 - JPEG and WebP export at quality 80 by default, configurable quality, and lossless PNG export.
@@ -44,6 +46,7 @@ The EXE installer downloaded from GitHub is unsigned, so Windows SmartScreen may
 | Ctrl or Alt + mouse wheel | Zoom |
 | I | Image information and AI metadata |
 | P | Preferences |
+| C | Toggle centered / top-left zoom alignment |
 | F2 | Rename |
 | Ctrl+S | Save dialog |
 | Ctrl+P | Windows Print Pictures |

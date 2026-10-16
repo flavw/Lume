@@ -13,6 +13,7 @@ mod model;
 mod panorama;
 mod preferences;
 mod tiles;
+mod view_rotation;
 use i18n::{t, Language};
 
 use backend::{Format, Loaded};
@@ -77,6 +78,7 @@ struct Settings {
     show_toolbar: bool,
     show_status_bar: bool,
     auto_restart: bool,
+    zoom_top_left: bool,
     menu_transparency: u8,
     manual_ratio: [f32; 2],
     neon_color: [u8; 3],
@@ -101,6 +103,7 @@ impl Default for Settings {
             show_toolbar: true,
             show_status_bar: false,
             auto_restart: true,
+            zoom_top_left: false,
             menu_transparency: 0,
             manual_ratio: [2.0, 1.0],
             neon_color: [0, 255, 200],
@@ -220,7 +223,8 @@ struct App {
     fit: Fit,
     wheel_fit: Fit,
     zoom: f32,
-    align_width_top: bool,
+    view_rotation: view_rotation::Rotation,
+    align_view: bool,
     pan: Vec2,
     canvas: Rect,
     shown: Rect,
@@ -320,7 +324,8 @@ impl App {
             ratio: None,
             drag_start: None,
             zoom: 1.0,
-            align_width_top: false,
+            view_rotation: view_rotation::Rotation::default(),
+            align_view: false,
             pan: Vec2::ZERO,
             canvas: Rect::NOTHING,
             shown: Rect::NOTHING,
@@ -510,7 +515,7 @@ impl App {
         self.redo.clear();
         self.selection = None;
         self.pan = Vec2::ZERO;
-        self.align_width_top = self.fit == Fit::Width;
+        self.align_view = true;
 
         if let Some((_, texture)) = self
             .texture_cache
@@ -637,7 +642,7 @@ impl App {
                             self.pan = Vec2::ZERO;
                             self.index = 0;
                             self.lossless = false;
-                            self.align_width_top = self.fit == Fit::Width;
+                            self.align_view = true;
                             self.zoom_notice = None;
                             self.update_texture(ctx);
                         }
@@ -780,6 +785,25 @@ impl App {
             .as_ref()
             .map(|i| i.dimensions())
             .unwrap_or((1, 1))
+    }
+    fn view_dimensions(&self) -> (u32,u32) {
+        self.view_rotation.dimensions(self.dimensions())
+    }
+    fn rotate_view(&mut self, clockwise: Option<bool>) {
+        if let Some(clockwise)=clockwise {self.view_rotation.turn(clockwise);}
+        else {self.view_rotation=view_rotation::Rotation::default();}
+        self.pan=Vec2::ZERO;
+        self.align_view=true;
+        self.drag_start=None;
+    }
+    fn view_rotation_menu(&mut self, ui: &mut egui::Ui) {
+        ui.menu_button(t("Girar exibição"),|ui| {
+            if item(ui,"Girar exibição 90° à direita","") {self.rotate_view(Some(true));}
+            if item(ui,"Girar exibição 90° à esquerda","") {self.rotate_view(Some(false));}
+            ui.add_enabled_ui(!self.view_rotation.is_default(),|ui| {
+                if item(ui,"Restaurar orientação da exibição","") {self.rotate_view(None);}
+            });
+        });
     }
     fn rotate_lossless(&mut self, degrees: u16) {
         if self.busy || self.loading.is_some() || self.dirty || self.jpeg.is_none() {
@@ -1046,13 +1070,13 @@ impl App {
             self.drag_start = None;
             self.lossless = false;
         }
-        if self.fit == Fit::Width {
-            self.align_width_top = true;
+        if self.fit == Fit::Width || self.settings.zoom_top_left {
+            self.align_view = true;
         }
         ctx.send_viewport_cmd(egui::ViewportCommand::Fullscreen(self.fullscreen));
     }
     fn zoom_by(&mut self, f: f32) {
-        let (w, h) = self.dimensions();
+        let (w, h) = self.view_dimensions();
         let s = model::display_scale(
             self.fit,
             (w, h),
@@ -1066,7 +1090,21 @@ impl App {
             self.wheel_fit = self.fit;
         }
         self.fit = Fit::Custom;
+        if self.settings.zoom_top_left {
+            self.align_view = true;
+        }
         self.show_zoom_notice();
+    }
+    fn toggle_zoom_alignment(&mut self) {
+        self.settings.zoom_top_left = !self.settings.zoom_top_left;
+        self.pan = Vec2::ZERO;
+        self.align_view = true;
+        let label = if self.settings.zoom_top_left {
+            "Zoom: canto superior esquerdo"
+        } else {
+            "Zoom: centro"
+        };
+        self.zoom_notice = Some((t(label), Instant::now()));
     }
     fn set_fit(&mut self, fit: Fit) {
         self.fit = fit;
@@ -1074,7 +1112,7 @@ impl App {
             self.wheel_fit = fit;
         }
         self.pan = Vec2::ZERO;
-        self.align_width_top = fit == Fit::Width;
+        self.align_view = true;
         self.show_zoom_notice();
     }
     fn show_zoom_notice(&mut self) {
@@ -1167,7 +1205,7 @@ impl App {
                     self.pan = Vec2::ZERO;
                     self.index = 0;
                     self.lossless = false;
-                    self.align_width_top = self.fit == Fit::Width;
+                    self.align_view = true;
                     self.zoom_notice = None;
                     self.update_texture(ctx);
                 }
@@ -1567,6 +1605,7 @@ impl App {
                     Key::F8 => self.move_file(true),
                     Key::F11 => self.hide_cursor = !self.hide_cursor,
                     Key::P => self.dialog = Some(Dialog::Settings),
+                    Key::C if !m.alt && !m.shift && !repeat => self.toggle_zoom_alignment(),
                     Key::I => self.show_information(),
                     Key::S => self.export_dialog(Format::Jpeg),
                     Key::W => self.export_dialog(Format::Webp),
@@ -1615,6 +1654,8 @@ impl App {
             _ => (0, 1),
         };
         if let Some(mut c) = self.selection {
+            let delta=self.view_rotation.inverse().vector(Vec2::new(dx as f32,dy as f32));
+            let (dx,dy)=(delta.x as i32,delta.y as i32);
             let (w, h) = self.dimensions();
             let amount = if m.shift { 10 } else { 1 };
             let (dx, dy) = (dx * amount, dy * amount);
@@ -1660,7 +1701,7 @@ impl App {
             return;
         }
         if self.loading.is_some() {if !repeat {self.navigate(direction as isize);} return;}
-        let (w,h)=self.dimensions();
+        let (w,h)=self.view_dimensions();
         let (_,sy)=model::display_scale(self.fit,(w,h),(self.canvas.width(),self.canvas.height()),self.zoom,self.pixel_ratio);
         let limit=((h as f32*sy-self.canvas.height())/2.0).max(0.0);
         let (pan,next)=model::page_step(self.pan.y,limit,direction,repeat);
@@ -1888,6 +1929,8 @@ impl App {
                                 }
                             });
                             ui.menu_button(t("Exibir"), |ui| {
+                                self.view_rotation_menu(ui);
+                                ui.separator();
                                 if self.animation.is_some() { if ui.checkbox(&mut self.animation_paused,t("Pausar animação GIF")).changed() {self.animation_loops=0;} ui.separator(); }
                                 ui.checkbox(
                                     &mut self.settings.show_toolbar,
@@ -2062,7 +2105,7 @@ impl App {
                                 let rect = self.canvas;
                                 let (sx, sy) = model::display_scale(
                                     self.fit,
-                                    (w, h),
+                                    self.view_dimensions(),
                                     (rect.width(), rect.height()),
                                     self.zoom,
                                     self.pixel_ratio,
@@ -2109,31 +2152,38 @@ impl App {
             let response=ui.allocate_rect(rect,if self.loading.is_none(){Sense::click_and_drag()}else{Sense::hover()});
             let display_image=self.image.clone();
             if let (Some(im),Some(texture))=(&display_image,&self.texture) {
-                let(w,h)=im.dimensions();
+                let source_dimensions=im.dimensions();
+                let(w,h)=self.view_rotation.dimensions(source_dimensions);
+                let mut view_selection=self.selection.map(|c|self.view_rotation.crop(c,source_dimensions));
+                let mut view_ratio=self.ratio.map(|r|if self.view_rotation.swapped(){1.0/r}else{r});
                 let(sx,sy)=model::display_scale(self.fit,(w,h),(rect.width(),rect.height()),self.zoom,self.pixel_ratio);
                 let size=Vec2::new(w as f32*sx,h as f32*sy);
                 let limit=Vec2::new(((size.x-rect.width())/2.0).max(0.0),((size.y-rect.height())/2.0).max(0.0));
-                if self.align_width_top {self.pan.y=limit.y;self.align_width_top=false;}
+                if self.align_view {
+                    let (x,y)=model::initial_pan((size.x,size.y),(rect.width(),rect.height()),self.settings.zoom_top_left,self.fit);
+                    self.pan=Vec2::new(x,y);self.align_view=false;
+                }
                 self.pan.x=self.pan.x.clamp(-limit.x,limit.x);self.pan.y=self.pan.y.clamp(-limit.y,limit.y);
                 let shown=Rect::from_center_size(rect.center()+self.pan,size);let shown=Rect::from_min_size(Pos2::new((shown.min.x*ctx.pixels_per_point()).round()/ctx.pixels_per_point(),(shown.min.y*ctx.pixels_per_point()).round()/ctx.pixels_per_point()),shown.size());self.shown=shown;
                 if self.settings.checkerboard && self.has_alpha {
                     ui.painter().image(self.checker_texture.id(),shown,Rect::from_min_max(Pos2::ZERO,Pos2::new(size.x/32.0,size.y/32.0)),Color32::WHITE);
                 }
-                let preview_scale=texture.size()[0]as f32/w as f32;
+                let source_shown=if self.view_rotation.swapped(){Rect::from_center_size(shown.center(),Vec2::new(size.y,size.x))}else{shown};
+                let preview_scale=texture.size()[0]as f32/source_dimensions.0 as f32;
                 let settled=self.loading.is_none() && self.last_navigation.elapsed()>=Duration::from_millis(150);
                 if self.last_navigation.elapsed()<Duration::from_millis(150) {ctx.request_repaint_after(Duration::from_millis(150).saturating_sub(self.last_navigation.elapsed()));}
-                if self.loading.is_none() && ((settled && self.fit==Fit::Large && sx*ctx.pixels_per_point()<0.999)||sx*ctx.pixels_per_point()>preview_scale*1.01||sy*ctx.pixels_per_point()>texture.size()[1]as f32/h as f32*1.01){
-                    self.tiles.draw(ctx,ui.painter(),im.clone(),shown,rect,texture.id());
-                }else{ui.painter().image(texture.id(),shown,Rect::from_min_max(Pos2::ZERO,Pos2::new(1.0,1.0)),Color32::WHITE);}
+                if self.loading.is_none() && ((settled && self.fit==Fit::Large && sx*ctx.pixels_per_point()<0.999)||sx*ctx.pixels_per_point()>preview_scale*1.01||sy*ctx.pixels_per_point()>texture.size()[1]as f32/source_dimensions.1 as f32*1.01){
+                    self.tiles.draw(ctx,ui.painter(),im.clone(),source_shown,rect,texture.id(),self.view_rotation);
+                }else{self.view_rotation.paint(ui.painter(),texture.id(),source_shown,Rect::from_min_max(Pos2::ZERO,Pos2::new(1.0,1.0)),shown.center());}
                 if response.clicked_by(egui::PointerButton::Primary) {
-                    if let (Some(crop), Some(pointer)) = (self.selection, response.interact_pointer_pos()) {
+                    if let (Some(crop), Some(pointer)) = (view_selection, response.interact_pointer_pos()) {
                         let selection_rect = Rect::from_min_size(
                             shown.min + Vec2::new(crop.x as f32 * sx, crop.y as f32 * sy),
                             Vec2::new(crop.w as f32 * sx, crop.h as f32 * sy),
                         );
                         // Keep the resize handles clickable just outside the border.
                         if !selection_rect.expand(10.0).contains(pointer) {
-                            self.selection = None;
+                            view_selection = None;
                             self.lossless = false;
                             self.drag_start = None;
                         }
@@ -2144,7 +2194,7 @@ impl App {
                     && matches!(self.fit, Fit::Large | Fit::All)
                     && response.drag_started_by(egui::PointerButton::Primary) {
                     if let Some(origin) = ctx.input(|i| i.pointer.press_origin()) {
-                        let touches_selection = self.selection.is_some_and(|crop| {
+                        let touches_selection = view_selection.is_some_and(|crop| {
                             Rect::from_min_size(shown.min + Vec2::new(crop.x as f32 * sx, crop.y as f32 * sy),
                                 Vec2::new(crop.w as f32 * sx, crop.h as f32 * sy)).expand(14.0).contains(origin)
                         });
@@ -2154,15 +2204,15 @@ impl App {
                                 y: ((origin.y - shown.min.y) / sy).floor().clamp(0.0, h.saturating_sub(1) as f32) as u32,
                                 w: 1, h: 1,
                             };
-                            self.ratio = None;
+                            view_ratio = None;
                             self.lossless = false;
-                            self.selection = Some(crop);
+                            view_selection = Some(crop);
                             self.drag_start = Some((origin, crop, 0));
                             free_selection_started = true;
                         }
                     }
                 }
-                if let Some(c)=self.selection {
+                if let Some(c)=view_selection {
                     let sel=Rect::from_min_size(shown.min+Vec2::new(c.x as f32*sx,c.y as f32*sy),Vec2::new(c.w as f32*sx,c.h as f32*sy));
                     let dark=Color32::from_black_alpha(145);
                     for r in [Rect::from_min_max(shown.min,Pos2::new(shown.max.x,sel.min.y)),Rect::from_min_max(Pos2::new(shown.min.x,sel.max.y),shown.max),Rect::from_min_max(Pos2::new(shown.min.x,sel.min.y),Pos2::new(sel.min.x,sel.max.y)),Rect::from_min_max(Pos2::new(sel.max.x,sel.min.y),Pos2::new(shown.max.x,sel.max.y))]{ui.painter().rect_filled(r,0.0,dark);}
@@ -2206,20 +2256,23 @@ impl App {
                         let dx=((p.x-start.x)/sx).round()as i64;let dy=((p.y-start.y)/sy).round()as i64;
                         let mut c=original;
                         if kind==1{c.x=(original.x as i64+dx).clamp(0,(w-c.w)as i64)as u32;c.y=(original.y as i64+dy).clamp(0,(h-c.h)as i64)as u32;}
-                        else if kind>=6 {c=original.resize_side(kind,if kind==6||kind==7{dx}else{dy},w,h,self.ratio);}
+                        else if kind>=6 {c=original.resize_side(kind,if kind==6||kind==7{dx}else{dy},w,h,view_ratio);}
                         else {
                             let anchor=if kind>=2{match kind{2=>(original.x+original.w,original.y+original.h),3=>(original.x,original.y+original.h),4=>(original.x+original.w,original.y),_=>(original.x,original.y)}}else{(((start.x-shown.min.x)/sx).clamp(0.0,w as f32)as u32,((start.y-shown.min.y)/sy).clamp(0.0,h as f32)as u32)};
                             let px=((p.x-shown.min.x)/sx).clamp(0.0,w as f32)as u32;let py=((p.y-shown.min.y)/sy).clamp(0.0,h as f32)as u32;
                             let mut cw=anchor.0.abs_diff(px).max(1);let mut ch=anchor.1.abs_diff(py).max(1);
-                            if let Some(r)=self.ratio {
+                            if let Some(r)=view_ratio {
                                 if cw as f32/ch as f32>r{cw=(ch as f32*r).round().max(1.0)as u32;}else{ch=(cw as f32/r).round().max(1.0)as u32;}
                             }
                             c=Crop{x:if px<anchor.0{anchor.0.saturating_sub(cw)}else{anchor.0},y:if py<anchor.1{anchor.1.saturating_sub(ch)}else{anchor.1},w:cw,h:ch};
                         }
-                        self.selection=Some(c);self.align_selection();
+                        view_selection=Some(c);
                     }}
                 }else if response.dragged(){self.pan+=ctx.input(|i|i.pointer.delta());}
                 if response.drag_stopped(){self.drag_start=None;}
+                self.selection=view_selection.map(|c|self.view_rotation.inverse().crop(c.bounded(w,h),(w,h)));
+                self.ratio=view_ratio.map(|r|if self.view_rotation.swapped(){1.0/r}else{r});
+                self.align_selection();
                 if response.hovered() {
                     let (scroll, modifiers)=ctx.input(|i|(i.raw_scroll_delta.y,i.modifiers));
                     if scroll!=0.0 {
@@ -2240,6 +2293,7 @@ impl App {
                         if item(ui,if self.slide{"Parar apresentação"}else{"Iniciar apresentação"},"Ctrl+W"){self.slide = !self.slide;self.last_slide=Instant::now();}
                         if item(ui,"Fechar programa",""){self.close_program(ctx);}
                         ui.separator();
+                        self.view_rotation_menu(ui);
                         ui.add_enabled_ui(!self.files.is_empty(),|ui|{if item(ui,"Ir para imagem",""){self.dialog=Some(Dialog::GoTo(String::new(),true));}});
                         return;
                     }
@@ -2257,6 +2311,7 @@ impl App {
                     if item(ui,"Aplicar recorte","Ctrl+Y"){self.apply_crop(ctx);}
                     if item(ui,"Copiar","Ctrl+C"){self.clipboard_copy();}
                     ui.separator();
+                    self.view_rotation_menu(ui);
                     ui.add_enabled_ui(!self.files.is_empty(),|ui|{if item(ui,"Ir para imagem",""){self.dialog=Some(Dialog::GoTo(String::new(),true));}});
                 });
             }else if !self.busy && self.loading.is_none() && self.error.is_none() && self.dialog.is_none() {
@@ -2284,6 +2339,7 @@ impl App {
                 let anchor=egui::Align2([horizontal,vertical]);
                 let pos=anchor.pos_in_rect(&rect.shrink(12.0));
                 let font=egui::FontId::proportional(self.settings.title_size.clamp(10.0,36.0));
+                ui.painter().text(pos+Vec2::new(2.0,2.0),anchor,&title,font.clone(),Color32::from_black_alpha(220));
                 ui.painter().text(pos,anchor,title,font,color);
             }
             if let Some((label, started))=&self.zoom_notice {
@@ -2580,6 +2636,8 @@ impl App {
                                     1=>{
                                         ui.heading(t("Visualização"));ui.separator();
                                         ui.checkbox(&mut self.settings.auto_restart,t("Reiniciar automaticamente ao chegar ao fim da pasta"));
+                                        let mut top_left=self.settings.zoom_top_left;
+                                        if ui.checkbox(&mut top_left,t("Iniciar zoom no canto superior esquerdo (C)")).changed() {self.toggle_zoom_alignment();}
                                         ui.separator();ui.label(t("Modo inicial"));
                                         for (label,fit) in FITS {ui.radio_value(&mut self.settings.fit,fit,t(label));}
                                     }
@@ -2653,7 +2711,7 @@ impl App {
                             ("+ ou = / −","Ampliar / reduzir"),("1–7","Modos de ajuste, conforme menu Exibir"),("Enter / F","Tela cheia / janela"),("Duplo clique esquerdo","Tela cheia / janela"),("T","Mostrar / ocultar título da arte (tela cheia)"),
                             ("Esc","Cancelar seleção, sair da tela cheia ou fechar"),("F2 / F6","Renomear, incluindo extensão"),("F5 / U","Recarregar imagem e pasta"),
                             ("F7 / F8","Mover / copiar arquivo"),("Del / Shift+Del","Lixeira / exclusão permanente, com confirmação"),("F11","Ocultar / mostrar cursor em tela cheia"),
-                            ("I","Informações da imagem"),("P","Preferências"),("S","Exportar JPEG"),("W","Exportar WebP"),("Q","Exportar PNG"),("Ctrl+P","Imprimir"),("Ctrl+O","Abrir imagem"),("Ctrl+S","Salvar imagem"),("Ctrl+A","Selecionar / desselecionar tudo"),
+                            ("I","Informações da imagem"),("P","Preferências"),("C","Alternar zoom entre centro e canto superior esquerdo"),("S","Exportar JPEG"),("W","Exportar WebP"),("Q","Exportar PNG"),("Ctrl+P","Imprimir"),("Ctrl+O","Abrir imagem"),("Ctrl+S","Salvar imagem"),("Ctrl+A","Selecionar / desselecionar tudo"),
                             ("Ctrl+Y","Aplicar recorte selecionado"),("Ctrl+Shift+L","Iniciar recorte JPEG sem perdas"),("Ctrl + setas","Redimensionar seleção proporcionalmente"),
                             ("Shift + setas","Mover seleção em passos maiores"),("Alt + setas","Alterar largura / altura da seleção"),
                             ("Ctrl+Z / Ctrl+J","Desfazer / refazer edições"),("Ctrl+C / Ctrl+Insert","Copiar imagem ou seleção"),("Ctrl+V","Colar como nova imagem"),
@@ -2995,7 +3053,7 @@ impl eframe::App for App {
         let (w, h) = self.dimensions();
         let s = model::display_scale(
             self.fit,
-            (w, h),
+            self.view_dimensions(),
             (self.canvas.width(), self.canvas.height()),
             self.zoom,
             self.pixel_ratio,
@@ -3072,5 +3130,14 @@ mod settings_tests {
         let saved = serde_json::to_string(&settings).unwrap();
         let restored: Settings = serde_json::from_str(&saved).unwrap();
         assert_eq!(restored.menu_transparency, 100);
+    }
+    #[test]
+    fn zoom_alignment_defaults_to_center_and_persists() {
+        let mut settings: Settings = serde_json::from_str("{}").unwrap();
+        assert!(!settings.zoom_top_left);
+        settings.zoom_top_left = true;
+        let saved = serde_json::to_string(&settings).unwrap();
+        let restored: Settings = serde_json::from_str(&saved).unwrap();
+        assert!(restored.zoom_top_left);
     }
 }

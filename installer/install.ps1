@@ -61,7 +61,7 @@ $link=$shell.CreateShortcut($start);$link.TargetPath=$exe;$link.WorkingDirectory
 $uninstall='HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\LumeView'
 New-Item -Force -Path $uninstall | Out-Null
 Set-ItemProperty -LiteralPath $uninstall -Name DisplayName -Value 'LumeView'
-Set-ItemProperty -LiteralPath $uninstall -Name DisplayVersion -Value '0.33.0'
+Set-ItemProperty -LiteralPath $uninstall -Name DisplayVersion -Value '0.35.1'
 Set-ItemProperty -LiteralPath $uninstall -Name DisplayIcon -Value $exe
 Set-ItemProperty -LiteralPath $uninstall -Name InstallLocation -Value $Target
 Set-ItemProperty -LiteralPath $uninstall -Name UninstallString -Value ('powershell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "'+(Join-Path $Target 'installer\uninstall.ps1')+'"')
