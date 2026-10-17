@@ -1,5 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod backend;
+mod dialog_art;
 mod batch;
 mod animation;
 mod keymap;
@@ -71,6 +72,8 @@ struct Settings {
     title_size: f32,
     title_position: u8,
     title_alignment: u8,
+    show_art_title: bool,
+    title_background_transparency: u8,
     jpeg_quality: u8,
     webp_quality: u8,
     ratio: usize,
@@ -97,6 +100,8 @@ impl Default for Settings {
             title_size: 14.0,
             title_position: 0,
             title_alignment: 0,
+            show_art_title: true,
+            title_background_transparency: 75,
             jpeg_quality: 80,
             webp_quality: 80,
             ratio: 3,
@@ -203,6 +208,7 @@ struct App {
     settings: Settings,
     book: Option<Arc<comic::Book>>,
     logo: egui::TextureHandle,
+    dialog_art: dialog_art::Cache,
     checker_texture: egui::TextureHandle,
     files: Vec<PathBuf>,
     index: usize,
@@ -235,7 +241,6 @@ struct App {
     fullscreen_chrome_opacity: f32,
     chrome_rect: Rect,
     hide_cursor: bool,
-    show_art_title: bool,
     pause_down: bool,
     dialog: Option<Dialog>,
     settings_page: usize,
@@ -302,6 +307,7 @@ impl App {
                 },
                 egui::TextureOptions::NEAREST_REPEAT,
             ),
+            dialog_art: dialog_art::Cache::default(),
             logo: cc.egui_ctx.load_texture(
                 "lumeview-cat",
                 egui::ColorImage::from_rgba_unmultiplied([128, 128], &cat_icon().rgba),
@@ -338,7 +344,6 @@ impl App {
             fullscreen_chrome_last: None,
             fullscreen_chrome_opacity: 0.0,
             chrome_rect: Rect::NOTHING,
-            show_art_title: true,
             pause_down: false,
             dialog: None,
             settings_page: 0,
@@ -1455,8 +1460,8 @@ impl App {
                 continue;
             }
             if key == Key::T && !m.ctrl && !m.alt && !m.command {
-                if self.fullscreen {
-                    self.show_art_title = !self.show_art_title;
+                if self.fullscreen && !repeat {
+                    self.settings.show_art_title = !self.settings.show_art_title;
                 }
                 continue;
             }
@@ -1995,6 +2000,8 @@ impl App {
                                 });
                             });
                             ui.menu_button(t("Ajuda"), |ui| {
+                                ui.set_min_width(150.0);
+                                ui.style_mut().wrap_mode=Some(egui::TextWrapMode::Extend);
                                 if item(ui, "Atalhos", "F1") {
                                     self.dialog = Some(Dialog::Help);
                                 }
@@ -2336,7 +2343,7 @@ impl App {
                         });
                     });
             }
-            if self.fullscreen && self.show_art_title {
+            if self.fullscreen && self.settings.show_art_title {
                 let title=self.display_name();
                 let [r,g,b]=self.settings.title_color;
                 let color=Color32::from_rgb(r,g,b);
@@ -2345,8 +2352,11 @@ impl App {
                 let anchor=egui::Align2([horizontal,vertical]);
                 let pos=anchor.pos_in_rect(&rect.shrink(12.0));
                 let font=egui::FontId::proportional(self.settings.title_size.clamp(10.0,36.0));
-                ui.painter().text(pos+Vec2::new(2.0,2.0),anchor,&title,font.clone(),Color32::from_black_alpha(220));
-                ui.painter().text(pos,anchor,title,font,color);
+                let galley=ui.painter().layout_no_wrap(title,font,color);
+                let bounds=anchor.anchor_rect(Rect::from_min_size(pos,galley.size()));
+                let alpha=((100-self.settings.title_background_transparency.min(100)) as f32*2.55).round() as u8;
+                ui.painter().rect_filled(bounds.expand2(Vec2::new(5.0,3.0)),2.0,Color32::from_black_alpha(alpha));
+                ui.painter().galley(bounds.min,galley,color);
             }
             if let Some((label, started))=&self.zoom_notice {
                 if started.elapsed()<Duration::from_secs(3) {
@@ -2416,12 +2426,23 @@ impl App {
             Dialog::Batch { .. } => "Converter em lote",
             Dialog::Overwrite(..) => "Substituir arquivo",
         };
+        let art_kind = match &dialog {
+            Dialog::Delete { .. } => Some((dialog_art::Kind::Delete,440.0)),
+            Dialog::Rename(..) => Some((dialog_art::Kind::Rename,400.0)),
+            Dialog::Settings => Some((dialog_art::Kind::Preferences,760.0)),
+            Dialog::SaveAs { .. } | Dialog::SaveOriginal(_) | Dialog::Overwrite(..) => Some((dialog_art::Kind::Save,440.0)),
+            _ => None,
+        };
+        let artwork=art_kind.map(|(kind,width)|(self.dialog_art.texture(ctx,kind),width));
+        let shortcuts_art=matches!(dialog,Dialog::Help).then(||self.dialog_art.texture(ctx,dialog_art::Kind::Shortcuts));
         egui::Window::new(t(title)).title_bar(false).frame(egui::Frame::window(&ctx.style()).inner_margin(16.0).corner_radius(8)).collapsible(false).resizable(matches!(dialog,Dialog::Help|Dialog::Search(_))).anchor(egui::Align2::CENTER_CENTER,Vec2::ZERO).show(ctx,|ui|{
-            ui.set_max_width(650.0);
+            ui.set_max_width(artwork.as_ref().map(|(_,width)|*width+dialog_art::DISPLAY_SIZE+16.0).unwrap_or(650.0));
             ui.spacing_mut().item_spacing=Vec2::new(10.0,10.0);
             ui.spacing_mut().button_padding=Vec2::new(14.0,7.0);
             ui.add_space(6.0);
+            if let Some((_,width))=&artwork {ui.set_width(*width+dialog_art::DISPLAY_SIZE+16.0);}
             if dialog_header(ui,title) {keep=false;}
+            let mut content = |ui: &mut egui::Ui| {
             match &mut dialog {
                 Dialog::GoTo(number,focus) => {
                     ui.set_width(340.0);
@@ -2653,10 +2674,11 @@ impl App {
                                         ui.separator();
                                         ui.horizontal(|ui|{ui.label(t("Cor da tela"));preferences::color_button(ui,&t("Escolher"),&mut self.settings.screen_color);});
                                         ui.horizontal(|ui|{ui.label(t("Cor do título em tela cheia"));preferences::color_button(ui,&t("Escolher"),&mut self.settings.title_color);});
+                                        ui.horizontal(|ui|{ui.label(t("Transparência do fundo do texto"));ui.add(egui::DragValue::new(&mut self.settings.title_background_transparency).range(0..=100).suffix("%"));});
                                         ui.horizontal(|ui|{ui.label(t("Tamanho do texto"));ui.add(egui::DragValue::new(&mut self.settings.title_size).range(10.0..=36.0).suffix(" px"));});
                                         ui.horizontal(|ui|{ui.label(t("Posição do texto"));for (i,name) in ["Topo","Meio","Embaixo"].iter().enumerate(){ui.radio_value(&mut self.settings.title_position,i as u8,t(name));}});
                                         ui.horizontal(|ui|{ui.label(t("Alinhamento do texto"));for (i,name) in ["Esquerda","Centro","Direita"].iter().enumerate(){ui.radio_value(&mut self.settings.title_alignment,i as u8,t(name));}});
-                                        ui.checkbox(&mut self.show_art_title,t("Mostrar título da arte (T, somente em tela cheia)"));
+                                        ui.checkbox(&mut self.settings.show_art_title,t("Mostrar título da arte (T, somente em tela cheia)"));
                                         ui.checkbox(&mut self.hide_cursor,t("Ocultar cursor em tela cheia (F11)"));
                                         ui.horizontal(|ui|{ui.label(t("Intervalo da apresentação"));ui.add(egui::DragValue::new(&mut self.settings.slide_seconds).range(1.0..=30.0).speed(0.5));ui.label(t("segundos"));});
                                     }
@@ -2708,8 +2730,10 @@ impl App {
  if ui.button(t("Dependências")).clicked(){self.dialog=Some(Dialog::Dependencies);keep=false;}
  }
                 Dialog::Help=>{
+                    ui.set_width(650.0);
                     egui::ScrollArea::vertical().max_height(500.0).show(ui,|ui|{
                         ui.label(format!("LumeView {}",env!("CARGO_PKG_VERSION")));ui.separator();
+                        let mut art_bounds=None;
                         for(k,v)in [
                             ("← / →","Imagem anterior / próxima; com seleção, mover recorte"),("↑ / ↓","Mover imagem verticalmente; com seleção, mover recorte"),
                             ("Espaço / Backspace","Próxima / anterior"),("Page Down / Page Up","Rolar para baixo / cima; novo pressionamento no limite muda a imagem"),("Ctrl + navegação","Pular 5 imagens"),
@@ -2724,9 +2748,20 @@ impl App {
                             ("Ctrl+H","Tamanho original"),("Ctrl+G","Escala de cinza"),("Ctrl+R","Redimensionar"),("Ctrl+F","Procurar na pasta"),
                             ("Ctrl+M","Imagem aleatória"),("Ctrl+N","Abrir em outra janela"),("Ctrl+W","Iniciar / parar apresentação"),
                             ("Pause (Windows)","Pausar apresentação; outra tecla continua"),
-                        ]{ui.horizontal_wrapped(|ui|{icons::shortcut(ui,&keymap::current_label(&t(k)));ui.label(t(v));});}
+                        ]{
+                            ui.horizontal_wrapped(|ui|{icons::shortcut(ui,&keymap::current_label(&t(k)));ui.label(t(v));});
+                            if k=="Page Down / Page Up" {
+                                art_bounds=Some(Rect::from_min_size(
+                                    Pos2::new(ui.max_rect().right()-dialog_art::DISPLAY_SIZE,ui.cursor().top()),
+                                    Vec2::splat(dialog_art::DISPLAY_SIZE)));
+                            }
+                        }
                         ui.separator();ui.label(t("Edições comuns ficam em memória até exportar. Navegar descarta essas edições. Recorte JPEG sem perdas salva uma cópia com sufixo _crop, _crop1, _crop2, preservando o original. JPEG com orientação EXIF diferente de 1 usa recorte comum nesta versão."));
                         ui.label(t("Imagens animadas e multipáginas: apenas o primeiro quadro. Sem OCR, miniaturas, impressão, captura de tela, filtros 8BF ou edição IPTC nesta versão."));
+                        if let (Some(texture),Some(bounds))=(&shortcuts_art,art_bounds) {
+                            // Overlay within the scrolling content; do not push shortcut rows down.
+                            ui.painter().image(texture.id(),bounds,Rect::from_min_max(Pos2::ZERO,Pos2::new(1.0,1.0)),Color32::WHITE);
+                        }
                     });
                 },
                 Dialog::Search(query)=>{
@@ -2818,6 +2853,14 @@ impl App {
 
                 },
             }
+            };
+            if let Some((texture,width))=&artwork {
+                ui.horizontal_top(|ui| {
+                    ui.spacing_mut().item_spacing.x=16.0;
+                    ui.vertical(|ui| {ui.set_width(*width);content(ui);});
+                    ui.add(egui::Image::new((texture.id(),Vec2::splat(dialog_art::DISPLAY_SIZE))).sense(Sense::hover()));
+                });
+            } else {content(ui);}
             if !matches!(dialog,Dialog::Delete { .. }|Dialog::FolderEnd { .. }|Dialog::Unsaved { .. }){
                 ui.add_space(4.0);ui.separator();
                 let label=if matches!(dialog,Dialog::Rename(..)|Dialog::Resize(..)|Dialog::ManualRatio{..}|Dialog::SaveOriginal(_)|Dialog::SaveAs{..}|Dialog::Overwrite(..)|Dialog::Batch{..}){"Cancelar"}else{"Fechar"};
@@ -3136,6 +3179,18 @@ mod settings_tests {
         let saved = serde_json::to_string(&settings).unwrap();
         let restored: Settings = serde_json::from_str(&saved).unwrap();
         assert_eq!(restored.menu_transparency, 100);
+    }
+    #[test]
+    fn fullscreen_title_visibility_persists_when_disabled() {
+        let mut settings: Settings = serde_json::from_str("{}").unwrap();
+        assert!(settings.show_art_title);
+        assert_eq!(settings.title_background_transparency, 75);
+        settings.title_background_transparency = 40;
+        settings.show_art_title = false;
+        let saved = serde_json::to_string(&settings).unwrap();
+        let restored: Settings = serde_json::from_str(&saved).unwrap();
+        assert!(!restored.show_art_title);
+        assert_eq!(restored.title_background_transparency, 40);
     }
     #[test]
     fn zoom_alignment_defaults_to_center_and_persists() {

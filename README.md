@@ -21,6 +21,8 @@ The EXE installer downloaded from GitHub is unsigned, so Windows SmartScreen may
 - Rotate the view 90° clockwise or counterclockwise from View, or reset its orientation. Rotation stays active while browsing during the session and does not change source pixels, saved images or clipboard copies.
 - Animated GIF playback with frame timing and loop counts; pause via View.
 - SVG/SVGZ viewing through the bundled ImageMagick renderer (rasterized for display).
+- Fullscreen title visibility is remembered, with an adjustable translucent black background (75% transparency by default).
+- Lume mascot illustrations load on demand in Save, Delete, Rename, Preferences and Shortcuts dialogs.
 - Fullscreen menus and toolbar fade in at the top-left corner and hide after three seconds away from the controls.
 - Batch resizing by pixels or percentage, with optional aspect-ratio preservation and original-format output. Batch naming supports a base name, digit count and starting number.
 - Customizable primary shortcuts under Edit → Preferences → Shortcuts, with conflict validation and default restoration.
