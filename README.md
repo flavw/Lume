@@ -16,7 +16,7 @@ The EXE installer downloaded from GitHub is unsigned, so Windows SmartScreen may
 ## Features
 
 - Fast native decoding of JPEG, PNG and WebP, asynchronous loading and a bounded image cache.
-- Minimal text menus; toolbar enabled by default and optional status bar.
+- Minimal text menus; toolbar enabled by default, optional status bar, and a title bar that can be shown or hidden from View. The title-bar preference is saved.
 - Original-size viewing, seven zoom modes, fullscreen and slideshow.
 - Rotate the view 90° clockwise or counterclockwise from View, or reset its orientation. Rotation stays active while browsing during the session and does not change source pixels, saved images or clipboard copies.
 - Animated GIF playback with frame timing and loop counts; pause via View.

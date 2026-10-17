@@ -77,6 +77,7 @@ struct Settings {
     slide_seconds: f32,
     show_toolbar: bool,
     show_status_bar: bool,
+    show_title_bar: bool,
     auto_restart: bool,
     zoom_top_left: bool,
     menu_transparency: u8,
@@ -102,6 +103,7 @@ impl Default for Settings {
             slide_seconds: 4.0,
             show_toolbar: true,
             show_status_bar: false,
+            show_title_bar: true,
             auto_restart: true,
             zoom_top_left: false,
             menu_transparency: 0,
@@ -358,6 +360,7 @@ impl App {
             batch_cancel: None,
             clipboard: None,
         };
+        cc.egui_ctx.send_viewport_cmd(egui::ViewportCommand::Decorations(app.settings.show_title_bar));
         if let Some(p) = std::env::args_os().nth(1) {
             app.open(PathBuf::from(p));
         }
@@ -1074,6 +1077,7 @@ impl App {
             self.align_view = true;
         }
         ctx.send_viewport_cmd(egui::ViewportCommand::Fullscreen(self.fullscreen));
+        if !self.fullscreen {ctx.send_viewport_cmd(egui::ViewportCommand::Decorations(self.settings.show_title_bar));}
     }
     fn zoom_by(&mut self, f: f32) {
         let (w, h) = self.view_dimensions();
@@ -1929,9 +1933,7 @@ impl App {
                                 }
                             });
                             ui.menu_button(t("Exibir"), |ui| {
-                                self.view_rotation_menu(ui);
-                                ui.separator();
-                                if self.animation.is_some() { if ui.checkbox(&mut self.animation_paused,t("Pausar animação GIF")).changed() {self.animation_loops=0;} ui.separator(); }
+                                if self.animation.is_some() { if ui.checkbox(&mut self.animation_paused,t("Pausar animação GIF")).changed() {self.animation_loops=0;} }
                                 ui.checkbox(
                                     &mut self.settings.show_toolbar,
                                     t("Barra de ferramentas"),
@@ -1940,7 +1942,11 @@ impl App {
                                     &mut self.settings.show_status_bar,
                                     t("Barra de status"),
                                 );
+                                if ui.checkbox(&mut self.settings.show_title_bar, t("Barra de título")).changed() {
+                                    ctx.send_viewport_cmd(egui::ViewportCommand::Decorations(self.settings.show_title_bar));
+                                }
                                 ui.separator();
+                                self.view_rotation_menu(ui);
                                 if item(ui, "Recarregar imagem e pasta", "F5") {
                                     if let Some(p) = self.source_path() {
                                         self.open(p);

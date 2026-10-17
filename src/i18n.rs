@@ -77,6 +77,7 @@ pub fn t(text: &str) -> String {
 fn english(text: &str) -> String {
     let text = text.trim_end_matches("...").trim_end_matches('…');
     let pairs = [
+        ("Barra de título", "Title bar"),
         ("Girar exibição", "Rotate view"),
         ("Girar exibição 90° à direita", "Rotate view 90° clockwise"),
         ("Girar exibição 90° à esquerda", "Rotate view 90° counterclockwise"),
